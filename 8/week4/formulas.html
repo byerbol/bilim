@@ -257,6 +257,14 @@ table.sum{border-collapse:collapse; width:100%; min-width:460px}
 .progress{height:4px; border-radius:4px; background:var(--accent-soft); overflow:hidden}
 .progress span{display:block; height:100%; width:0; background:var(--accent); transition:width .5s cubic-bezier(.2,.7,.2,1)}
 .home-link{font:600 .8rem var(--mono); color:var(--muted); text-decoration:none; flex:none}
+.speed{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; flex:none}
+.speed button{border:0; background:transparent; color:var(--muted); font:600 .8rem var(--body); padding:8px 10px; cursor:pointer}
+.speed button + button{border-left:1px solid var(--line)}
+.speed button:hover{color:var(--ink)}
+.speed button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+.speed-label{font:600 .72rem var(--mono); color:var(--muted); text-transform:uppercase; letter-spacing:.08em; flex:none}
+@media (max-width:900px){ .speed-label{display:none} }
+@media (max-width:620px){ .speed button{padding:8px 6px; font-size:.72rem} }
 .home-link:hover{color:var(--accent)}
 
 @media (max-width:960px){
@@ -615,6 +623,10 @@ table.sum{border-collapse:collapse; width:100%; min-width:460px}
     <div class="progress"><span id="prog"></span></div>
   </div>
   <button class="theme-btn" type="button"></button>
+  <span class="speed-label">Speed</span>
+  <div class="speed" role="group" aria-label="Animation speed" id="speed">
+    <button type="button" data-speed="slow">Slow</button><button type="button" data-speed="normal">Normal</button><button type="button" data-speed="fast">Fast</button><button type="button" data-speed="instant">Instant</button>
+  </div>
   <a class="home-link" href="../../#grade-8">All lessons</a>
   <button class="nav-btn" id="next" aria-label="Next slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
 </nav>
@@ -628,6 +640,16 @@ const store = {
   del(k){ try { localStorage.removeItem(k); } catch(e){} }
 };
 const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SPEED_FACTOR = { slow:2, normal:1, fast:0.4, instant:0 };
+let speed = store.get('fx-speed') || (reduced ? 'instant' : 'normal');
+if (!(speed in SPEED_FACTOR)) speed = 'normal';
+const speedEl = document.getElementById('speed');
+function setSpeed(s){
+  speed = s; store.set('fx-speed', s);
+  speedEl.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.speed === s)));
+}
+speedEl.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setSpeed(b.dataset.speed); });
+setSpeed(speed);
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 /* ================= addresses ================= */
@@ -1050,23 +1072,22 @@ class SheetView {
   async play(steps, ctx = {}){
     const id = ++this.playId; this.scripting = true;
     const alive = () => id === this.playId;
-    const fast = reduced || ctx.instant;
-    const wait = ms => new Promise(r => setTimeout(r, fast ? 0 : ms));
+    const fast = () => ctx.instant || SPEED_FACTOR[speed] === 0;
+    const wait = ms => new Promise(r => setTimeout(r, fast() ? 0 : ms * SPEED_FACTOR[speed]));
+    const typeOut = async text => {
+      for (let i = 0; i < text.length; i++) {
+        if (!alive()) return false;
+        if (fast()) { this.setEdit(this.edit + text.slice(i)); break; }
+        this.setEdit(this.edit + text[i]); await wait(95);
+      }
+      return alive();
+    };
     for (const s of steps) {
       if (!alive()) return;
       const [k, a, b] = s;
       if (k === 'sel') { this.select(a, b); await wait(420); }
-      else if (k === 'type') {
-        this.beginEdit('', 'cell', true);
-        if (fast) this.setEdit(a);
-        else for (const ch of a) { if (!alive()) return; this.setEdit(this.edit + ch); await wait(95); }
-        await wait(300);
-      }
-      else if (k === 'more') {
-        if (fast) this.setEdit(this.edit + a);
-        else for (const ch of a) { if (!alive()) return; this.setEdit(this.edit + ch); await wait(95); }
-        await wait(300);
-      }
+      else if (k === 'type') { this.beginEdit('', 'cell', true); if (!await typeOut(a)) return; await wait(300); }
+      else if (k === 'more') { if (!await typeOut(a)) return; await wait(300); }
       else if (k === 'enter') { this.commit(null); await wait(500); }
       else if (k === 'set') { for (const [ad, v] of Object.entries(a)) this.m.set(ad, v); this.render(); }
       else if (k === 'copy') { this.copy(); await wait(650); }
