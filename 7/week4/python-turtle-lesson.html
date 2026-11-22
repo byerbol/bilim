@@ -439,7 +439,7 @@ bgcolor("black")</pre>
       <div class="stack">
         <ol class="howto">
           <li><span>Read the task and watch the <b>Goal</b> drawing on the right.</span></li>
-          <li><span>Write your code in the editor on the task slide. Press <b>Run</b> or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to test it.</span></li>
+          <li><span>Write your code in the editor on the task slide. Press <b>Run</b> or <kbd>⌘ Cmd</kbd>+<kbd>Enter</kbd> to test it.</span></li>
           <li><span>When it matches, copy it into CodeHS and run it there. No <code>import turtle</code> needed.</span></li>
         </ol>
         <div class="facts">
@@ -1430,7 +1430,7 @@ document.querySelectorAll('.slide.task').forEach(sec => {
   const copyBtn = sec.querySelector('.copy');
   copyBtn.addEventListener('click', () => {
     const done = () => { copyBtn.textContent = 'Copied'; setTimeout(() => copyBtn.textContent = 'Copy code', 1600); };
-    const fallback = () => { ed.focus(); ed.select(); copyBtn.textContent = 'Press Ctrl+C'; setTimeout(() => copyBtn.textContent = 'Copy code', 2200); };
+    const fallback = () => { ed.focus(); ed.select(); copyBtn.textContent = 'Press ⌘ Cmd+C'; setTimeout(() => copyBtn.textContent = 'Copy code', 2200); };
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ed.value).then(done, fallback);
       else fallback();

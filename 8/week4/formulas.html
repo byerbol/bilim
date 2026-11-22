@@ -380,8 +380,8 @@ table.sum{border-collapse:collapse; width:100%; min-width:460px}
       <div class="stack">
         <ol class="live-steps" data-steps="copy">
           <li>Enter the formula <code>=A1*(A2+A3)</code> into cell A4.</li>
-          <li>Select A4 and copy it: right-click &gt; Copy, or <kbd>Ctrl</kbd>+<kbd>C</kbd>.</li>
-          <li>Select B4 and paste: right-click &gt; Paste, or <kbd>Ctrl</kbd>+<kbd>V</kbd>.</li>
+          <li>Select A4 and copy it: right-click &gt; Copy, or <kbd>⌘ Cmd</kbd>+<kbd>C</kbd>.</li>
+          <li>Select B4 and paste: right-click &gt; Paste, or <kbd>⌘ Cmd</kbd>+<kbd>V</kbd>.</li>
           <li>B4 now has <code>=B1*(B2+B3)</code> and uses the values from column B.</li>
         </ol>
         <p class="note">The spreadsheet moved every cell name one column to the right, because the formula moved one column to the right.</p>
@@ -546,7 +546,7 @@ table.sum{border-collapse:collapse; width:100%; min-width:460px}
       <div class="stack">
         <ol class="howto">
           <li><span>Read the task. Click a cell, type a formula that starts with <code>=</code>, and press <kbd>Enter</kbd>.</span></li>
-          <li><span>Copy and paste formulas with <kbd>Ctrl</kbd>+<kbd>C</kbd> and <kbd>Ctrl</kbd>+<kbd>V</kbd>, or the buttons under the sheet. Drag over cells to paste into many at once.</span></li>
+          <li><span>Copy and paste formulas with <kbd>⌘ Cmd</kbd>+<kbd>C</kbd> and <kbd>⌘ Cmd</kbd>+<kbd>V</kbd>, or the buttons under the sheet. Drag over cells to paste into many at once.</span></li>
           <li><span>Press <b>Check my sheet</b>. It also tests your formulas with other numbers, so typed answers will not pass.</span></li>
           <li><span>Do the same task in Google Sheets.</span></li>
         </ol>
@@ -872,7 +872,7 @@ class SheetView {
     h += `</tr></thead><tbody>`;
     for (let r = 0; r < rows; r++) { h += `<tr><th data-row="${r}">${r + 1}</th>`; for (let c = 0; c < cols; c++) h += `<td data-r="${r}" data-c="${c}"><span class="v"></span></td>`; h += `</tr>`; }
     h += `</tbody></table></div>`;
-    if (this.o.tools !== false) h += `<div class="tools"><button type="button" data-act="copy" title="Ctrl+C">Copy</button><button type="button" data-act="paste" title="Ctrl+V">Paste</button><button type="button" data-act="undo" title="Ctrl+Z">Undo</button><button type="button" data-act="formulas" aria-pressed="false">Show formulas</button></div>`;
+    if (this.o.tools !== false) h += `<div class="tools"><button type="button" data-act="copy" title="⌘ Cmd+C">Copy</button><button type="button" data-act="paste" title="⌘ Cmd+V">Paste</button><button type="button" data-act="undo" title="⌘ Cmd+Z">Undo</button><button type="button" data-act="formulas" aria-pressed="false">Show formulas</button></div>`;
     h += `</div>`;
     const tmp = document.createElement('div'); tmp.innerHTML = h;
     this.root = tmp.firstElementChild; this.host.prepend(this.root);
