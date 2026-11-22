@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bilim Lessons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: graph-paper ground, one centered column; grade → week → lesson drill-down with a breadcrumb */
+:root{
+  --paper:#edf3ef; --grid:rgba(31,94,70,.075); --surface:#ffffff; --ink:#132d27; --muted:#526d66; --line:#cad9d2;
+  --accent:#17804f; --accent-ink:#ffffff; --accent-soft:#d3ecdf; --blue:#2559c9; --shadow:rgba(19,45,39,.28);
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#0e1916; --grid:rgba(140,210,175,.06); --surface:#14231f; --ink:#e1eee8; --muted:#93aba3; --line:#26403a;
+    --accent:#4cc48a; --accent-ink:#06201a; --accent-soft:#173b2d; --blue:#86aefc; --shadow:rgba(0,0,0,.6); color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; background-color:var(--paper); color:var(--ink); font:400 1.05rem/1.55 var(--body);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+.wrap{max-width:980px; margin:0 auto; padding-block:clamp(28px,7vh,72px) 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex; flex-direction:column; gap:28px}
+.eyebrow{font:600 .78rem/1 var(--mono); text-transform:uppercase; letter-spacing:.12em; color:var(--accent); margin:0}
+h1{font:800 clamp(2.4rem,6vw,4rem)/1.02 var(--display); letter-spacing:-.02em; margin:10px 0 0; text-wrap:balance}
+.sub{color:var(--muted); margin:10px 0 0; max-width:60ch}
+.crumbs{display:flex; flex-wrap:wrap; gap:6px; align-items:center; font:600 .9rem var(--mono)}
+.crumbs a{color:var(--accent); text-decoration:none}
+.crumbs a:hover{text-decoration:underline}
+.crumbs span{color:var(--muted)}
+.grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.card{
+  display:flex; flex-direction:column; gap:6px; text-decoration:none; color:var(--ink);
+  background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px;
+  transition:transform .18s cubic-bezier(.2,.7,.2,1), border-color .18s, box-shadow .18s;
+  animation:rise .5s cubic-bezier(.2,.7,.2,1) both; animation-delay:calc(var(--i,0) * 45ms);
+}
+.card:hover{transform:translateY(-3px); border-color:var(--accent); box-shadow:0 18px 36px -24px var(--shadow)}
+.card .big{font:800 3rem/1 var(--display); color:var(--accent)}
+.card .name{font:700 1.15rem/1.25 var(--display)}
+.card .meta{font:600 .8rem var(--mono); color:var(--muted)}
+.card.empty{opacity:.6; pointer-events:none}
+.card .go{margin-top:auto; padding-top:10px; font:600 .85rem var(--mono); color:var(--accent)}
+.lessons{display:grid; gap:12px}
+.lessons .card{flex-direction:row; align-items:center; justify-content:space-between; gap:16px}
+.msg{background:var(--surface); border:1px dashed var(--line); border-radius:12px; padding:18px; color:var(--muted)}
+code{font-family:var(--mono); font-size:.9em; background:var(--accent-soft); padding:.05em .35em; border-radius:5px}
+:focus-visible{outline:3px solid var(--blue); outline-offset:2px}
+@keyframes rise{from{opacity:0; transform:translateY(12px)} to{opacity:1; transform:none}}
+@media (prefers-reduced-motion:reduce){.card{animation:none; transition:none}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <p class="eyebrow" id="eyebrow">Bilim · Informatics</p>
+    <h1 id="heading">Choose your grade</h1>
+    <p class="sub" id="sub">Pick a grade, then a week, to open that week's lesson presentation.</p>
+  </header>
+  <nav class="crumbs" id="crumbs" aria-label="Breadcrumb"></nav>
+  <section id="view" aria-live="polite"></section>
+</main>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  let data = null;
+
+  function weekHref(g, w){
+    return w.lessons.length === 1 ? encodeURI(w.lessons[0].file) : `#grade-${g.grade}-week-${w.week}`;
+  }
+  function crumbs(parts){
+    $('crumbs').innerHTML = parts.map((p, i) => i < parts.length - 1 ? `<a href="${p[1]}">${esc(p[0])}</a><span>/</span>` : `<span>${esc(p[0])}</span>`).join('');
+  }
+  function head(eyebrow, h, sub){ $('eyebrow').textContent = eyebrow; $('heading').textContent = h; $('sub').textContent = sub; document.title = h === 'Choose your grade' ? 'Bilim Lessons' : `${h} · Bilim Lessons`; }
+
+  function home(){
+    head('Bilim · Informatics', 'Choose your grade', "Pick a grade, then a week, to open that week's lesson presentation.");
+    crumbs([['All grades', '#']]);
+    $('view').innerHTML = `<div class="grid">${data.grades.map((g, i) => {
+      const n = g.weeks.reduce((a, w) => a + w.lessons.length, 0);
+      return `<a class="card${n ? '' : ' empty'}" style="--i:${i}" href="#grade-${g.grade}"${n ? '' : ' aria-disabled="true" tabindex="-1"'}>
+        <span class="big">${g.grade}</span><span class="name">Grade ${g.grade}</span>
+        <span class="meta">${n ? plural(n, 'lesson') : 'No lessons yet'}</span>${n ? '<span class="go">Open →</span>' : ''}</a>`;
+    }).join('')}</div>`;
+  }
+  function grade(g){
+    head(`Grade ${g.grade}`, 'Choose a week', 'Each week opens its lesson presentation.');
+    crumbs([['All grades', '#'], [`Grade ${g.grade}`, '']]);
+    const weeks = g.weeks.filter(w => w.lessons.length);
+    $('view').innerHTML = weeks.length ? `<div class="grid">${weeks.map((w, i) => `
+      <a class="card" style="--i:${i}" href="${weekHref(g, w)}">
+        <span class="meta">Week</span><span class="big">${w.week}</span>
+        <span class="name">${w.lessons.length === 1 ? esc(w.lessons[0].title) : plural(w.lessons.length, 'lesson')}</span>
+        <span class="go">${w.lessons.length === 1 ? 'Open presentation →' : 'See lessons →'}</span></a>`).join('')}</div>`
+      : `<p class="msg">No lessons for grade ${g.grade} yet.</p>`;
+  }
+  function week(g, w){
+    head(`Grade ${g.grade} · Week ${w.week}`, 'Choose a lesson', 'This week has more than one presentation.');
+    crumbs([['All grades', '#'], [`Grade ${g.grade}`, `#grade-${g.grade}`], [`Week ${w.week}`, '']]);
+    $('view').innerHTML = `<div class="lessons">${w.lessons.map((l, i) => `
+      <a class="card" style="--i:${i}" href="${encodeURI(l.file)}"><span class="name">${esc(l.title)}</span><span class="go">Open →</span></a>`).join('')}</div>`;
+  }
+  function route(){
+    if (!data) return;
+    const m = location.hash.match(/^#grade-(\d+)(?:-week-(\d+))?$/);
+    const g = m && data.grades.find(x => x.grade === +m[1]);
+    if (!g) return home();
+    const w = m[2] && g.weeks.find(x => x.week === +m[2]);
+    if (w) return week(g, w);
+    grade(g);
+  }
+  window.addEventListener('hashchange', route);
+  fetch('lessons.json', { cache:'no-cache' })
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(j => { data = j; route(); })
+    .catch(() => {
+      $('view').innerHTML = `<p class="msg">The lesson list could not be loaded. On GitHub it is built automatically after each upload. To view the site on this computer, run <code>python .github/scripts/build_manifest.py</code> and open it through a local server.</p>`;
+    });
+})();
+</script>
+</body>
+</html>
