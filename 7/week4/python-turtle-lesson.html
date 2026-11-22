@@ -196,7 +196,7 @@ td code{background:none; padding:0; color:var(--accent); font-weight:600; white-
 .nav-btn:hover{border-color:var(--accent); color:var(--accent)}
 .nav-btn:disabled{opacity:.35; cursor:default}
 .nav-btn svg{width:20px; height:20px}
-.bar-mid{flex:1; min-width:0; display:flex; flex-direction:column; gap:6px}
+.bar-mid{flex:1; min-width:4.5rem; display:flex; flex-direction:column; gap:6px}
 .bar-title{display:flex; gap:12px; align-items:baseline; font-size:.92rem; min-width:0}
 #count{font:600 .82rem var(--mono); color:var(--accent); font-variant-numeric:tabular-nums; flex:none}
 #stitle{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--muted)}
@@ -214,8 +214,9 @@ td code{background:none; padding:0; color:var(--accent); font-weight:600; white-
   .quiz{grid-template-columns:minmax(0,1fr)}
   .slide-inner{justify-content:flex-start}
 }
+@media (max-width:780px){ .speed-label{display:none} }
 @media (max-width:620px){
-  .speed-label,#stitle{display:none}
+  #stitle{display:none}
   .speed button{padding:8px 7px; font-size:.74rem}
   .facts{grid-template-columns:minmax(0,1fr)}
   .explain-list li{grid-template-columns:minmax(0,1fr); gap:2px}
