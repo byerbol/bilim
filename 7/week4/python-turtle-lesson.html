@@ -151,6 +151,9 @@ input[type=range]{width:100%; accent-color:var(--accent)}
 .fact{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:12px 14px}
 .fact b{display:block; font:700 1.15rem var(--display)}
 .fact span{color:var(--muted); font-size:.92rem}
+.site-link{display:flex; flex-direction:column; gap:8px; padding:16px 18px; border-radius:12px; border:2px solid var(--accent); background:var(--accent-soft); color:var(--ink); text-decoration:none; transition:transform .15s}
+.site-link:hover{transform:translateY(-2px)}
+.site-link b{font:800 clamp(1.3rem,3vw,1.8rem)/1.1 var(--display); color:var(--accent); overflow-wrap:anywhere}
 .tasklist{list-style:none; margin:0; padding:0; display:grid; gap:8px}
 .tasklist button{width:100%; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; text-align:left; padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; font:700 1rem var(--body)}
 .tasklist button:hover{border-color:var(--accent)}
@@ -438,6 +441,10 @@ bgcolor("black")</pre>
           <div class="fact"><b>Facing right</b><span>Tracy starts at the center, facing east</span></div>
           <div class="fact"><b>Black, size 1</b><span>The starting pen</span></div>
         </div>
+        <a class="site-link" href="https://byerbol.github.io/bilim" target="_blank" rel="noopener">
+          <span class="eyebrow">Open this lesson on your device</span>
+          <b>byerbol.github.io/bilim</b>
+        </a>
       </div>
       <div class="stack">
         <p class="eyebrow">Jump to a task</p>
