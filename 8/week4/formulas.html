@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Spreadsheet Formulas</title>
+<script>try{var t=localStorage.getItem('bilim-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -20,7 +21,7 @@
   --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
-  :root{
+  :root:not([data-theme="light"]){
     --paper:#0e1916; --grid:rgba(140,210,175,.06); --surface:#14231f; --ink:#e1eee8; --muted:#93aba3; --line:#26403a;
     --accent:#4cc48a; --accent-ink:#06201a; --accent-soft:#173b2d; --blue:#86aefc; --ok:#5fd38d; --bad:#ff8a7a; --bad-soft:#3a1d1a; --ok-soft:#173b2a;
     --gridline:#29403a; --head:#182b26; --sel:#8ab4f8; --sel-soft:rgba(138,180,248,.16);
@@ -28,6 +29,14 @@
     --shadow:rgba(0,0,0,.6); color-scheme:dark;
   }
 }
+:root[data-theme="dark"]{
+    --paper:#0e1916; --grid:rgba(140,210,175,.06); --surface:#14231f; --ink:#e1eee8; --muted:#93aba3; --line:#26403a;
+    --accent:#4cc48a; --accent-ink:#06201a; --accent-soft:#173b2d; --blue:#86aefc; --ok:#5fd38d; --bad:#ff8a7a; --bad-soft:#3a1d1a; --ok-soft:#173b2a;
+    --gridline:#29403a; --head:#182b26; --sel:#8ab4f8; --sel-soft:rgba(138,180,248,.16);
+    --r0:#ffa95e; --r1:#d29bff; --r2:#8ab4f8; --r3:#6fd49a; --r4:#ff8a7a; --r5:#5fd6c6;
+    --shadow:rgba(0,0,0,.6); color-scheme:dark;
+  }
+:root[data-theme="light"]{color-scheme:light}
 *{box-sizing:border-box}
 html{height:100%}
 body{
@@ -46,6 +55,10 @@ h2 code{background:none; padding:0; font-size:.86em; color:var(--accent)}
 .hl{color:var(--accent)}
 a{color:var(--accent)}
 
+.theme-btn{display:inline-flex; align-items:center; gap:6px; height:38px; padding:0 13px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font:600 .82rem var(--body); cursor:pointer; flex:none}
+.theme-btn:hover{border-color:var(--accent); color:var(--accent)}
+.theme-btn svg{width:17px; height:17px; flex:none}
+@media (max-width:780px){ .bar .theme-btn span{display:none} .bar .theme-btn{padding:0; width:38px; justify-content:center} }
 /* deck */
 .deck{position:relative; flex:1; min-height:0}
 .slide{position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; opacity:0; visibility:hidden; transform:translateX(40px);
@@ -594,6 +607,7 @@ table.sum{border-collapse:collapse; width:100%; min-width:460px}
     <div class="bar-title"><span id="count">1 / 1</span><span id="stitle"></span></div>
     <div class="progress"><span id="prog"></span></div>
   </div>
+  <button class="theme-btn" type="button"></button>
   <a class="home-link" href="../../#grade-8">All lessons</a>
   <button class="nav-btn" id="next" aria-label="Next slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
 </nav>
@@ -1483,6 +1497,33 @@ deck.addEventListener('touchend', e => {
 }, { passive:true });
 
 goTo(fromLocation(), true);
+})();
+</script>
+<script>
+(function(){
+  var KEY = 'bilim-theme', order = ['auto', 'light', 'dark'];
+  var s = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+  var icons = {
+    auto: s + '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>',
+    light: s + '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+    dark: s + '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>'
+  };
+  var labels = { auto: 'Auto', light: 'Light', dark: 'Dark' };
+  function get(){ try { return localStorage.getItem(KEY) || 'auto'; } catch (e) { return 'auto'; } }
+  function apply(t){
+    var r = document.documentElement;
+    if (t === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', t);
+    try { localStorage.setItem(KEY, t); } catch (e) {}
+    document.querySelectorAll('.theme-btn').forEach(function(b){
+      b.innerHTML = icons[t] + '<span>' + labels[t] + '</span>';
+      b.setAttribute('aria-label', 'Theme: ' + labels[t] + '. Click to change.');
+      b.title = 'Theme: ' + labels[t] + ' (click to change)';
+    });
+  }
+  document.querySelectorAll('.theme-btn').forEach(function(b){
+    b.addEventListener('click', function(){ apply(order[(order.indexOf(get()) + 1) % 3]); });
+  });
+  apply(get());
 })();
 </script>
 </body>
