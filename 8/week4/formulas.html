@@ -1,0 +1,1489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spreadsheet Formulas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one slide per screen on graph paper; explanation left, a live mini spreadsheet right; stacks to one column on phones */
+:root{
+  --paper:#edf3ef; --grid:rgba(31,94,70,.075); --surface:#ffffff; --ink:#132d27; --muted:#526d66; --line:#cad9d2;
+  --accent:#17804f; --accent-ink:#ffffff; --accent-soft:#d3ecdf; --blue:#2559c9; --ok:#137a3a; --bad:#b42318; --bad-soft:#fde4e1; --ok-soft:#dcf3e4;
+  --gridline:#dde5e1; --head:#f2f6f4; --sel:#1a73e8; --sel-soft:rgba(26,115,232,.12);
+  --r0:#d9650a; --r1:#9334c9; --r2:#1a73e8; --r3:#188038; --r4:#d93025; --r5:#00897b;
+  --shadow:rgba(19,45,39,.3);
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#0e1916; --grid:rgba(140,210,175,.06); --surface:#14231f; --ink:#e1eee8; --muted:#93aba3; --line:#26403a;
+    --accent:#4cc48a; --accent-ink:#06201a; --accent-soft:#173b2d; --blue:#86aefc; --ok:#5fd38d; --bad:#ff8a7a; --bad-soft:#3a1d1a; --ok-soft:#173b2a;
+    --gridline:#29403a; --head:#182b26; --sel:#8ab4f8; --sel-soft:rgba(138,180,248,.16);
+    --r0:#ffa95e; --r1:#d29bff; --r2:#8ab4f8; --r3:#6fd49a; --r4:#ff8a7a; --r5:#5fd6c6;
+    --shadow:rgba(0,0,0,.6); color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html{height:100%}
+body{
+  margin:0; height:100%; display:flex; flex-direction:column; overflow:hidden;
+  background-color:var(--paper); color:var(--ink); font:400 1.06rem/1.55 var(--body);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+h1,h2,h3{font-family:var(--display); line-height:1.05; margin:0; text-wrap:balance; letter-spacing:-.015em}
+h1{font-size:clamp(2.6rem,6.4vw,4.8rem); font-weight:800}
+h2{font-size:clamp(1.8rem,3.6vw,2.7rem); font-weight:700}
+h3{font-size:1.2rem; font-weight:700}
+p{margin:0}
+code{font-family:var(--mono); font-size:.92em; background:var(--accent-soft); padding:.08em .35em; border-radius:5px}
+h2 code{background:none; padding:0; font-size:.86em; color:var(--accent)}
+.hl{color:var(--accent)}
+a{color:var(--accent)}
+
+/* deck */
+.deck{position:relative; flex:1; min-height:0}
+.slide{position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; opacity:0; visibility:hidden; transform:translateX(40px);
+  transition:opacity .45s ease, transform .55s cubic-bezier(.2,.7,.2,1), visibility 0s linear .55s}
+.slide.before{transform:translateX(-40px)}
+.slide.active{opacity:1; visibility:visible; transform:none; transition:opacity .45s ease, transform .55s cubic-bezier(.2,.7,.2,1)}
+.slide-inner{max-width:1200px; margin:0 auto; min-height:100%; padding-block:clamp(24px,5vh,56px) 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex; flex-direction:column; gap:26px; justify-content:center}
+.slide.active .slide-inner > *, .slide.active .split > *{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+.slide.active .slide-inner > *:nth-child(2), .slide.active .split > *:nth-child(2){animation-delay:.12s}
+.slide.active .slide-inner > *:nth-child(3){animation-delay:.22s}
+@keyframes rise{from{opacity:0; transform:translateY(18px)} to{opacity:1; transform:none}}
+.split{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(24px,4vw,52px); align-items:start}
+.split > *{min-width:0}
+.stack{display:flex; flex-direction:column; gap:16px; min-width:0}
+.eyebrow{font:600 .78rem/1 var(--mono); text-transform:uppercase; letter-spacing:.12em; color:var(--accent)}
+.slide-head{display:flex; flex-direction:column; gap:12px}
+.lead{font-size:1.2rem; max-width:60ch}
+.muted{color:var(--muted)}
+.points{margin:0; padding-left:1.2em; display:flex; flex-direction:column; gap:9px; max-width:62ch}
+.points li::marker{color:var(--accent)}
+.note{border-left:3px solid var(--accent); padding:4px 0 4px 14px; color:var(--muted); max-width:62ch}
+.keys{font:400 .85rem var(--mono); color:var(--muted)}
+kbd{font-family:var(--mono); font-size:.85em; border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; padding:0 6px; background:var(--surface)}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px 18px}
+
+/* objectives */
+.goals{list-style:none; margin:0; padding:0; display:grid; gap:10px; max-width:520px}
+.goals li{display:flex; gap:14px; align-items:baseline; padding:12px 16px; background:var(--surface); border:1px solid var(--line); border-radius:10px}
+.goals b{font:600 .95rem var(--mono); color:var(--accent); white-space:nowrap}
+
+/* buttons */
+.btn{font:700 .95rem/1 var(--body); border-radius:8px; padding:10px 16px; cursor:pointer; border:1px solid var(--line); background:var(--surface); color:var(--ink); display:inline-flex; align-items:center; gap:8px; transition:transform .12s, border-color .2s; text-decoration:none}
+.btn:hover{border-color:var(--accent)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.btn.small{padding:7px 12px; font-size:.85rem}
+.btn svg{width:16px; height:16px}
+:focus-visible{outline:3px solid var(--blue); outline-offset:2px}
+.row{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+
+/* ---------- mini spreadsheet ---------- */
+.sheet-host{display:flex; flex-direction:column; gap:10px; min-width:0}
+.sheet{background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 22px 44px -30px var(--shadow); outline:none; min-width:0}
+.sheet:focus-visible{box-shadow:0 0 0 3px var(--blue)}
+.fbar{display:flex; align-items:center; gap:10px; padding:6px 10px; border-bottom:1px solid var(--gridline); font:400 .95rem var(--mono); min-height:40px}
+.nb{min-width:4.5ch; font-weight:600; color:var(--muted); border-right:1px solid var(--gridline); padding-right:10px; white-space:nowrap}
+.fx{font:italic 600 1rem Georgia,serif; color:var(--muted)}
+.fdisp,.fin{flex:1; min-width:0; font:400 .95rem var(--mono); color:var(--ink); padding:4px 6px; border-radius:5px; white-space:pre; overflow:hidden; text-overflow:ellipsis}
+.fdisp{cursor:text; min-height:1.7em}
+.fin{border:1px solid var(--sel); background:var(--surface); outline:none}
+.gridwrap{overflow:auto; max-width:100%}
+table.grid{border-collapse:collapse; table-layout:fixed; font:400 .95rem var(--body); user-select:none; -webkit-user-select:none}
+.grid th{background:var(--head); color:var(--muted); font:600 .72rem var(--mono); border:1px solid var(--gridline); height:26px; padding:0 4px; text-align:center}
+.grid th.hsel{background:var(--sel-soft); color:var(--sel)}
+.grid td{border:1px solid var(--gridline); height:32px; padding:0 8px; position:relative; white-space:nowrap; overflow:visible; font-variant-numeric:tabular-nums; cursor:cell}
+.grid td .v{display:block; overflow:hidden; text-overflow:ellipsis}
+.grid td.num{text-align:right}
+.grid td.fml{font-family:var(--mono); font-size:.82rem; text-align:left; color:var(--muted)}
+.grid td.err .v{color:var(--bad); font-weight:700; text-align:center}
+.grid td.inrange{background:var(--sel-soft)}
+.grid td.sel::after{content:""; position:absolute; inset:-1px; border:2px solid var(--sel); pointer-events:none; z-index:2}
+.grid td.ref::before{content:""; position:absolute; inset:0; border:2px dashed var(--rc); background:color-mix(in srgb, var(--rc) 12%, transparent); pointer-events:none; z-index:1}
+.grid td.clip::after{content:""; position:absolute; inset:-1px; border:2px dashed var(--sel); pointer-events:none; z-index:2; animation:ants .8s linear infinite}
+.grid td.sel.clip::after{border-style:solid}
+@keyframes ants{50%{opacity:.35}}
+.grid td.pasted{animation:pasted .9s ease}
+@keyframes pasted{0%{background:color-mix(in srgb, var(--sel) 35%, transparent)}100%{background:transparent}}
+.grid td.good{animation:good 1.2s ease}
+@keyframes good{0%,40%{background:var(--ok-soft)}100%{background:transparent}}
+.cellin{position:absolute; left:-1px; top:-1px; height:calc(100% + 2px); min-width:calc(100% + 2px); z-index:5; border:2px solid var(--sel); background:var(--surface); color:var(--ink); font:400 .95rem var(--mono); padding:0 6px; outline:none; box-shadow:0 6px 18px -8px var(--shadow)}
+.tools{display:flex; flex-wrap:wrap; gap:6px; padding:8px 10px; border-top:1px solid var(--gridline); background:var(--head)}
+.tools button{font:600 .8rem var(--body); padding:6px 10px; border-radius:6px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer}
+.tools button:hover{border-color:var(--sel)}
+.tools button[aria-pressed="true"]{background:var(--sel); border-color:var(--sel); color:var(--surface)}
+.caption{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; min-height:44px}
+.say{font-size:1rem; color:var(--ink); flex:1; min-width:0}
+.say b,.say code{color:var(--accent)}
+
+/* operators */
+.ops{width:100%; border-collapse:separate; border-spacing:0 6px}
+.ops button{width:100%; display:grid; grid-template-columns:3rem minmax(0,1fr) auto; align-items:center; gap:12px; text-align:left; padding:10px 14px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; font:400 1rem var(--body)}
+.ops button:hover{border-color:var(--accent)}
+.ops button[aria-pressed="true"]{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); background:var(--accent-soft)}
+.ops .sym{font:700 1.4rem var(--mono); color:var(--accent); text-align:center}
+.ops .ex{font:400 .88rem var(--mono); color:var(--muted)}
+.opslist{list-style:none; margin:0; padding:0; display:grid; gap:8px}
+
+/* address readout */
+.readout{display:flex; align-items:baseline; gap:16px; flex-wrap:wrap}
+.readout .big{font:800 clamp(3rem,8vw,5rem)/1 var(--display); color:var(--accent); font-variant-numeric:tabular-nums; min-width:3ch}
+.readout .parts{color:var(--muted)}
+.readout .parts b{color:var(--ink)}
+
+/* step lists synced to demos */
+.live-steps{list-style:none; margin:0; padding:0; display:grid; gap:8px; counter-reset:s}
+.live-steps li{counter-increment:s; position:relative; padding:10px 12px 10px 56px; min-height:52px; border-radius:10px; border:1px solid transparent; transition:background .3s, border-color .3s}
+.live-steps li::before{content:counter(s); position:absolute; left:12px; top:10px; font:800 1rem/2rem var(--display); width:2rem; height:2rem; text-align:center; border-radius:50%; background:var(--accent-soft); color:var(--accent)}
+.live-steps li.now{background:var(--surface); border-color:var(--accent)}
+.live-steps li.now::before{background:var(--accent); color:var(--accent-ink)}
+
+/* reference lab */
+.reftable{width:100%; border-collapse:collapse; background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+.reftable td{padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+.reftable tr:last-child td{border-bottom:0}
+.reftable td:first-child{font:700 1rem var(--mono); color:var(--accent); white-space:nowrap; width:5.5rem}
+.refpick{display:flex; flex-wrap:wrap; gap:8px}
+.refpick button{font:700 1rem var(--mono); padding:8px 14px; border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer}
+.refpick button[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.refwrap{overflow-x:auto}
+.refgrid{border-collapse:collapse; table-layout:fixed; background:var(--surface); font:400 .9rem var(--mono)}
+.refgrid th{background:var(--head); color:var(--muted); font:600 .72rem var(--mono); border:1px solid var(--gridline); height:26px; width:84px}
+.refgrid th:first-child{width:40px}
+.refgrid td{border:1px solid var(--gridline); height:44px; text-align:center; animation:pop .45s cubic-bezier(.2,.7,.2,1) both}
+.refgrid td.src{background:var(--sel-soft); box-shadow:inset 0 0 0 2px var(--sel)}
+.refgrid .chg{color:var(--r2); font-weight:600}
+.refgrid .fix{color:var(--r0); font-weight:700}
+@keyframes pop{from{opacity:0; transform:scale(.85)} to{opacity:1; transform:none}}
+.legend{display:flex; gap:16px; flex-wrap:wrap; font-size:.92rem; color:var(--muted)}
+.legend span::before{content:""; display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; background:var(--c)}
+
+/* errors */
+.errlist{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+.errlist li{display:grid; grid-template-columns:6.5rem minmax(0,1fr); gap:12px; align-items:baseline; padding:10px 14px; background:var(--surface); border:1px solid var(--line); border-radius:10px}
+.errlist b{font:700 .95rem var(--mono); color:var(--bad)}
+
+/* quiz */
+.quiz{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px}
+.q{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px; display:flex; flex-direction:column; gap:12px; min-width:0}
+.opts{display:flex; flex-direction:column; gap:8px}
+.opt{text-align:left; font:400 .98rem var(--body); padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--ink); cursor:pointer}
+.opt:hover{border-color:var(--accent)}
+.opt.right{background:var(--ok-soft); border-color:var(--ok); font-weight:700}
+.opt.wrong{background:var(--bad-soft); border-color:var(--bad)}
+.opt code{background:none; padding:0}
+.why{font-size:.95rem; color:var(--muted)}
+.why b{color:var(--ok)}
+
+/* practice */
+.howto{counter-reset:s; list-style:none; margin:0; padding:0; display:grid; gap:12px; max-width:62ch}
+.howto li{counter-increment:s; display:grid; grid-template-columns:2.2rem minmax(0,1fr); gap:12px; align-items:start}
+.howto li::before{content:counter(s); font:800 1.1rem/2.2rem var(--display); width:2.2rem; height:2.2rem; text-align:center; border-radius:50%; background:var(--accent); color:var(--accent-ink)}
+.tasklist{list-style:none; margin:0; padding:0; display:grid; gap:8px}
+.tasklist button{width:100%; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; text-align:left; padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; font:700 1rem var(--body)}
+.tasklist button:hover{border-color:var(--accent)}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chip{font:600 .74rem/1 var(--mono); padding:5px 8px; border-radius:999px; background:var(--accent-soft); color:var(--ink)}
+.site-link{display:flex; flex-direction:column; gap:8px; padding:16px 18px; border-radius:12px; border:2px solid var(--accent); background:var(--accent-soft); color:var(--ink); text-decoration:none; transition:transform .15s}
+.site-link:hover{transform:translateY(-2px)}
+.site-link b{font:800 clamp(1.2rem,2.6vw,1.6rem)/1.1 var(--display); color:var(--accent); overflow-wrap:anywhere}
+.task .slide-head{flex-direction:row; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap}
+.task .steps{margin:0; padding-left:1.2em; display:grid; gap:6px}
+details.hint{border:1px dashed var(--line); border-radius:10px; padding:10px 14px; background:var(--surface)}
+details.hint summary{cursor:pointer; font-weight:700; color:var(--accent)}
+details.hint p{margin-top:8px}
+.results{list-style:none; margin:0; padding:0; display:grid; gap:8px}
+.results li{display:grid; grid-template-columns:1.6rem minmax(0,1fr); gap:8px; align-items:start; padding:10px 12px; border-radius:8px; background:var(--surface); border:1px solid var(--line)}
+.results li.ok{border-color:var(--ok); background:var(--ok-soft)}
+.results li.no{border-color:var(--bad); background:var(--bad-soft)}
+.results .ic{font:800 1rem/1.4 var(--display)}
+.results li.ok .ic{color:var(--ok)} .results li.no .ic{color:var(--bad)}
+.results small{display:block; color:var(--muted); font-size:.9rem}
+.win{font:800 1.3rem var(--display); color:var(--ok)}
+.machine{max-width:100%; height:auto}
+.mq{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px}
+
+/* summary */
+.table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface)}
+table.sum{border-collapse:collapse; width:100%; min-width:460px}
+.sum th,.sum td{text-align:left; padding:9px 14px; border-bottom:1px solid var(--line); vertical-align:top}
+.sum th{font:600 .75rem var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--muted)}
+.sum tr:last-child td{border-bottom:0}
+.sum td code{background:none; padding:0; color:var(--accent); font-weight:600; white-space:nowrap}
+.terms{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 24px; font-size:.95rem}
+.terms b{color:var(--ink)}
+.terms span{color:var(--muted)}
+
+/* bottom bar */
+.bar{display:flex; align-items:center; gap:14px; padding-block:10px; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); background:var(--surface); border-top:1px solid var(--line)}
+.nav-btn{width:44px; height:44px; flex:none; border-radius:50%; border:1px solid var(--line); background:var(--paper); color:var(--ink); cursor:pointer; display:grid; place-items:center}
+.nav-btn:hover{border-color:var(--accent); color:var(--accent)}
+.nav-btn:disabled{opacity:.35; cursor:default}
+.nav-btn svg{width:20px; height:20px}
+.bar-mid{flex:1; min-width:4.5rem; display:flex; flex-direction:column; gap:6px}
+.bar-title{display:flex; gap:12px; align-items:baseline; font-size:.92rem; min-width:0}
+#count{font:600 .82rem var(--mono); color:var(--accent); font-variant-numeric:tabular-nums; flex:none}
+#stitle{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--muted)}
+.progress{height:4px; border-radius:4px; background:var(--accent-soft); overflow:hidden}
+.progress span{display:block; height:100%; width:0; background:var(--accent); transition:width .5s cubic-bezier(.2,.7,.2,1)}
+.home-link{font:600 .8rem var(--mono); color:var(--muted); text-decoration:none; flex:none}
+.home-link:hover{color:var(--accent)}
+
+@media (max-width:960px){
+  .split{grid-template-columns:minmax(0,1fr)}
+  .quiz{grid-template-columns:minmax(0,1fr)}
+  .slide-inner{justify-content:flex-start}
+}
+@media (max-width:620px){
+  #stitle,.home-link{display:none}
+  .terms{grid-template-columns:minmax(0,1fr)}
+  .errlist li{grid-template-columns:minmax(0,1fr); gap:2px}
+  .mq{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){
+  .slide,.slide.active{transition:none; transform:none}
+  .slide.active .slide-inner > *, .slide.active .split > *, .refgrid td{animation:none}
+}
+</style>
+</head>
+<body>
+<main class="deck" id="deck">
+
+<!-- 1 -->
+<section class="slide" data-title="Formulas">
+  <div class="slide-inner">
+    <div class="split">
+      <div class="stack">
+        <p class="eyebrow">Grade 8 · Chapter 2.4</p>
+        <h1>Spreadsheet <span class="hl">Formulas</span></h1>
+        <p class="lead">How do you calculate the area of a rectangle in a spreadsheet? You write a formula once, and the spreadsheet does the math for you.</p>
+        <ul class="goals">
+          <li><b>You will</b><span>learn how to write and copy formulas</span></li>
+          <li><b>You will</b><span>use relative and absolute cell references</span></li>
+        </ul>
+        <p class="keys">Next slide: <kbd>→</kbd> · Back: <kbd>←</kbd> · Every sheet in this lesson is live: click a cell and type.</p>
+      </div>
+      <div class="sheet-host" data-demo="hero"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="Cell address">
+  <div class="slide-inner">
+    <header class="slide-head">
+      <p class="eyebrow">Keep in mind</p>
+      <h2>Every cell has an address</h2>
+    </header>
+    <div class="split">
+      <div class="stack">
+        <ul class="points">
+          <li>Columns are named with <b>letters</b>: A, B, C, D …</li>
+          <li>Rows are named with <b>numbers</b>: 1, 2, 3, 4 …</li>
+          <li>A cell's name is its column letter, then its row number. The cell in column <b>A</b>, row <b>1</b> is <code>A1</code>.</li>
+        </ul>
+        <div class="card readout"><span class="big" id="addrBig">A1</span><span class="parts" id="addrParts">column <b>A</b>, row <b>1</b></span></div>
+        <p class="muted">Click any cell in the sheet to see its address.</p>
+      </div>
+      <div class="sheet-host" data-demo="address"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="What is a formula?">
+  <div class="slide-inner">
+    <header class="slide-head">
+      <p class="eyebrow">Formulas</p>
+      <h2>A formula calculates the value of a cell</h2>
+    </header>
+    <div class="split">
+      <div class="stack">
+        <p class="lead">Spreadsheets mostly work with numbers. A formula can add, subtract, multiply, divide and raise to a power. Every formula starts with <code>=</code>.</p>
+        <ul class="opslist" id="ops"></ul>
+        <p class="muted">Click an operation to see it in the sheet.</p>
+      </div>
+      <div class="sheet-host" data-demo="ops"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="Enter a formula">
+  <div class="slide-inner">
+    <header class="slide-head">
+      <p class="eyebrow">Enter a formula</p>
+      <h2>Four steps to your first formula</h2>
+    </header>
+    <div class="split">
+      <div class="stack">
+        <ol class="live-steps" data-steps="enter">
+          <li>Type <code>7</code> in cell A1 and <code>3</code> in cell A2.</li>
+          <li>Select cell A3.</li>
+          <li>Type an equal sign <code>=</code> to start a formula.</li>
+          <li>Then type <code>A1+A2</code> and press <kbd>Enter</kbd>.</li>
+        </ol>
+        <p class="note"><b>Tip:</b> instead of typing A1 and A2, just click on cell A1 and cell A2 while you write the formula. Try it in the sheet.</p>
+        <p class="note">Change a number and the formula updates by itself. This is why we use cell names, not typed numbers.</p>
+      </div>
+      <div class="sheet-host" data-demo="enter"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Copy and paste a formula">
+  <div class="slide-inner">
+    <header class="slide-head">
+      <p class="eyebrow">Copy / paste a formula</p>
+      <h2>Copy a formula and it adjusts itself</h2>
+    </header>
+    <div class="split">
+      <div class="stack">
+        <ol class="live-steps" data-steps="copy">
+          <li>Enter the formula <code>=A1*(A2+A3)</code> into cell A4.</li>
+          <li>Select A4 and copy it: right-click &gt; Copy, or <kbd>Ctrl</kbd>+<kbd>C</kbd>.</li>
+          <li>Select B4 and paste: right-click &gt; Paste, or <kbd>Ctrl</kbd>+<kbd>V</kbd>.</li>
+          <li>B4 now has <code>=B1*(B2+B3)</code> and uses the values from column B.</li>
+        </ol>
+        <p class="note">The spreadsheet moved every cell name one column to the right, because the formula moved one column to the right.</p>
+      </div>
+      <div class="sheet-host" data-demo="copy"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="Relative and absolute">
+  <div class="slide-inner">
+    <header class="slide-head">
+      <p class="eyebrow">Relative and absolute values</p>
+      <h2>The <code>$</code> sign stops a reference from moving</h2>
+    </header>
+    <div class="split">
+      <div class="stack">
+        <p>By default, references are <b>relative</b>: copy <code>=A1+B1</code> from row 1 to row 2 and it becomes <code>=A2+B2</code>. An <b>absolute</b> reference never changes. It is marked with a dollar sign.</p>
+        <table class="reftable">
+          <tr><td>A2</td><td>The column and row change when copied</td></tr>
+          <tr><td>$A$2</td><td>The column and the row do not change</td></tr>
+          <tr><td>A$2</td><td>The row does not change</td></tr>
+          <tr><td>$A2</td><td>The column does not change</td></tr>
+        </table>
+      </div>
+      <div class="stack">
+        <p class="eyebrow">Try it: copy <span id="refSrc">=A1</span> from B2 to every cell</p>
+        <div class="refpick" id="refpick" role="group" aria-label="Reference type"></div>
+        <div class="refwrap"><table class="refgrid" id="refgrid"></table></div>
+        <div class="legend"><span style="--c:var(--r2)">moved</span><span style="--c:var(--r0)">locked with $</span></div>
+        <p class="muted" id="refNote"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="Why we need $">
+  <div class="slide-inner">
+    <header class="slide-head">
+      <p class="eyebrow">Relative vs absolute in action</p>
+      <h2>When copying breaks a formula</h2>
+    </header>
+    <div class="split">
+      <div class="stack">
+        <p class="lead">To convert TB to GB, MB and so on, every row multiplies by the same constant 1024 in B1.</p>
+        <ul class="points">
+          <li><code>=B2*B1</code> works in B3. Copy it down, and B1 moves too: B4 becomes <code>=B3*B2</code>. Wrong answer.</li>
+          <li><code>=B2*$B$1</code> keeps the constant locked. Copy it down and every row still uses B1.</li>
+        </ul>
+        <p class="note">Rule of thumb: a value that every copy must share, like a constant or a price, gets <code>$</code>.</p>
+      </div>
+      <div class="sheet-host" data-demo="dollar"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="Functions">
+  <div class="slide-inner">
+    <header class="slide-head">
+      <p class="eyebrow">Extra: ready-made functions</p>
+      <h2>Functions do common math for a whole range</h2>
+    </header>
+    <div class="split">
+      <div class="stack">
+        <p><code>A2:A6</code> is a <b>range</b>: every cell from A2 down to A6. Functions take a range in brackets.</p>
+        <table class="reftable">
+          <tr><td>SUM</td><td><code>=SUM(B2:B6)</code> adds all the numbers</td></tr>
+          <tr><td>AVERAGE</td><td><code>=AVERAGE(B2:B6)</code> finds the mean</td></tr>
+          <tr><td>MAX</td><td><code>=MAX(B2:B6)</code> finds the largest</td></tr>
+          <tr><td>MIN</td><td><code>=MIN(B2:B6)</code> finds the smallest</td></tr>
+          <tr><td>ABS</td><td><code>=ABS(A1-B1)</code> removes the minus sign</td></tr>
+        </table>
+      </div>
+      <div class="sheet-host" data-demo="funcs"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="Errors">
+  <div class="slide-inner">
+    <header class="slide-head">
+      <p class="eyebrow">Keep in mind</p>
+      <h2>When a formula shows an error</h2>
+    </header>
+    <div class="split">
+      <div class="stack">
+        <p>Sometimes Google Sheets cannot calculate a cell. Then it shows an error code instead of a number.</p>
+        <ul class="errlist">
+          <li><b>#DIV/0!</b><span>Division by zero. It is mathematically undefined.</span></li>
+          <li><b>#NAME?</b><span>A misspelled function, like <code>=SUMM(A1:A2)</code>, or text without quotes.</span></li>
+          <li><b>#ERROR!</b><span>The formula is written wrong, like <code>=A1+*2</code>.</span></li>
+          <li><b>#REF!</b><span>A circular reference: the cell uses itself.</span></li>
+        </ul>
+        <p class="muted">Click an error cell to see its formula. Fix it by changing A2 to a number that is not 0.</p>
+      </div>
+      <div class="sheet-host" data-demo="errors"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-title="Quick check">
+  <div class="slide-inner">
+    <header class="slide-head">
+      <p class="eyebrow">Quick check</p>
+      <h2>Predict before you type</h2>
+      <p class="muted">Click an answer. The explanation appears when you find the right one.</p>
+    </header>
+    <div class="quiz">
+      <div class="q">
+        <p><b>C1 has <code>=A1+B1</code>. You copy C1 to C2. What is in C2?</b></p>
+        <div class="opts">
+          <button class="opt"><code>=A1+B1</code></button>
+          <button class="opt" data-right><code>=A2+B2</code></button>
+          <button class="opt"><code>=B1+C1</code></button>
+        </div>
+        <p class="why" hidden><b>=A2+B2.</b> One row down, so every row number goes up by 1.</p>
+      </div>
+      <div class="q">
+        <p><b>Which reference never changes when you copy it?</b></p>
+        <div class="opts">
+          <button class="opt"><code>A2</code></button>
+          <button class="opt"><code>A$2</code></button>
+          <button class="opt" data-right><code>$A$2</code></button>
+        </div>
+        <p class="why" hidden><b>$A$2.</b> Both the column and the row are locked.</p>
+      </div>
+      <div class="q">
+        <p><b>B1 has <code>=$A1*2</code>. You copy it to C1. What is in C1?</b></p>
+        <div class="opts">
+          <button class="opt" data-right><code>=$A1*2</code></button>
+          <button class="opt"><code>=B1*2</code></button>
+          <button class="opt"><code>=$B1*2</code></button>
+        </div>
+        <p class="why" hidden><b>=$A1*2.</b> The column A is locked, and the row did not move.</p>
+      </div>
+      <div class="q">
+        <p><b>A1 is 10 and A2 is 0. What does <code>=A1/A2</code> show?</b></p>
+        <div class="opts">
+          <button class="opt"><code>0</code></button>
+          <button class="opt" data-right><code>#DIV/0!</code></button>
+          <button class="opt"><code>10</code></button>
+        </div>
+        <p class="why" hidden><b>#DIV/0!</b> You cannot divide by zero.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-title="Practice time">
+  <div class="slide-inner">
+    <header class="slide-head">
+      <p class="eyebrow">Practice</p>
+      <h2>Your turn: six spreadsheet tasks</h2>
+    </header>
+    <div class="split">
+      <div class="stack">
+        <ol class="howto">
+          <li><span>Read the task. Click a cell, type a formula that starts with <code>=</code>, and press <kbd>Enter</kbd>.</span></li>
+          <li><span>Copy and paste formulas with <kbd>Ctrl</kbd>+<kbd>C</kbd> and <kbd>Ctrl</kbd>+<kbd>V</kbd>, or the buttons under the sheet. Drag over cells to paste into many at once.</span></li>
+          <li><span>Press <b>Check my sheet</b>. It also tests your formulas with other numbers, so typed answers will not pass.</span></li>
+          <li><span>Do the same task in Google Sheets.</span></li>
+        </ol>
+        <div class="row">
+          <a class="btn primary" href="https://sheets.new" target="_blank" rel="noopener">Open a new Google Sheet</a>
+        </div>
+        <a class="site-link" href="https://byerbol.github.io/bilim" target="_blank" rel="noopener">
+          <span class="eyebrow">Open this lesson on your device</span>
+          <b>byerbol.github.io/bilim</b>
+        </a>
+      </div>
+      <div class="stack">
+        <p class="eyebrow">Jump to a task</p>
+        <ul class="tasklist" id="tasklist"></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- task slides are inserted here -->
+
+<section class="slide" data-title="Summary" id="summary">
+  <div class="slide-inner">
+    <header class="slide-head">
+      <p class="eyebrow">Summary</p>
+      <h2>Cheat sheet</h2>
+    </header>
+    <div class="split">
+      <div class="stack">
+        <div class="table-wrap">
+          <table class="sum">
+            <thead><tr><th>Write</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><code>=A1+A2</code></td><td>A formula always starts with =</td></tr>
+              <tr><td><code>+ - * / ^</code></td><td>Add, subtract, multiply, divide, power</td></tr>
+              <tr><td><code>A2</code></td><td>Relative: moves when copied</td></tr>
+              <tr><td><code>$A$2</code></td><td>Absolute: never moves</td></tr>
+              <tr><td><code>A$2</code> / <code>$A2</code></td><td>Mixed: locks only the row / only the column</td></tr>
+              <tr><td><code>=SUM(B2:B6)</code></td><td>A function used on a range</td></tr>
+              <tr><td><code>#DIV/0!</code></td><td>Error: division by zero</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <details class="hint">
+          <summary>Literacy: why is it important to use formulas?</summary>
+          <p>Discuss first, then open. Formulas update by themselves when the data changes. One formula can be copied to hundreds of rows. They avoid mistakes from calculating by hand, and anyone can click a cell to see how a result was found.</p>
+        </details>
+      </div>
+      <div class="stack">
+        <p class="eyebrow">Terminology · Терминология</p>
+        <div class="card terms">
+          <p><b>relation</b> <span>· қатынас · отношение</span></p>
+          <p><b>instead</b> <span>· орнына · вместо</span></p>
+          <p><b>expression</b> <span>· өрнек · выражение</span></p>
+          <p><b>to input</b> <span>· енгізу · вводить</span></p>
+          <p><b>to enter</b> <span>· енгізу · вводить</span></p>
+          <p><b>undefined</b> <span>· анықталмаған · неопределенный</span></p>
+          <p><b>type</b> <span>· түрі · тип</span></p>
+          <p><b>to resolve</b> <span>· шешу · решать</span></p>
+          <p><b>formula</b> <span>· формула · формула</span></p>
+          <p><b>cell</b> <span>· ұяшық · ячейка</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<nav class="bar" aria-label="Slides">
+  <button class="nav-btn" id="prev" aria-label="Previous slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <div class="bar-mid">
+    <div class="bar-title"><span id="count">1 / 1</span><span id="stitle"></span></div>
+    <div class="progress"><span id="prog"></span></div>
+  </div>
+  <a class="home-link" href="../../#grade-8">All lessons</a>
+  <button class="nav-btn" id="next" aria-label="Next slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+</nav>
+
+<script>
+(() => {
+'use strict';
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){} },
+  del(k){ try { localStorage.removeItem(k); } catch(e){} }
+};
+const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* ================= addresses ================= */
+const colName = c => { let s = ''; c++; while (c > 0) { const m = (c - 1) % 26; s = String.fromCharCode(65 + m) + s; c = Math.floor((c - 1) / 26); } return s; };
+const colIndex = s => { let n = 0; for (const ch of s.toUpperCase()) n = n * 26 + (ch.charCodeAt(0) - 64); return n - 1; };
+const addr = (r, c) => colName(c) + (r + 1);
+const parseAddr = a => { const m = /^\$?([A-Za-z]{1,3})\$?(\d+)$/.exec(a); return m ? { c:colIndex(m[1]), r:+m[2] - 1 } : null; };
+
+/* ================= formula engine ================= */
+const ERR = (err, msg) => ({ err, msg });
+const isErr = v => v !== null && typeof v === 'object' && !Array.isArray(v) && 'err' in v;
+const TOK = /\s*(?:(\d+(?:\.\d+)?|\.\d+)|("(?:[^"]|"")*")|(\$?[A-Za-z]{1,3}\$?\d+(?::\$?[A-Za-z]{1,3}\$?\d+)?)(?![\w(])|([A-Za-z_][\w.]*)|(#REF!)|(<>|<=|>=|[-+*/^&(),%=<>:]))/y;
+const PARSE_ERR = () => ERR('#ERROR!', 'Formula parse error. Check the operators and brackets.');
+
+function tokenize(s){
+  const out = []; let i = 0;
+  while (i < s.length) {
+    if (/^\s*$/.test(s.slice(i))) break;
+    TOK.lastIndex = i;
+    const m = TOK.exec(s);
+    if (!m) throw PARSE_ERR();
+    if (m[1] !== undefined) out.push({ t:'num', v:parseFloat(m[1]) });
+    else if (m[2] !== undefined) out.push({ t:'str', v:m[2].slice(1, -1).replace(/""/g, '"') });
+    else if (m[3] !== undefined) out.push({ t:'ref', v:m[3] });
+    else if (m[4] !== undefined) out.push({ t:'id', v:m[4] });
+    else if (m[5] !== undefined) out.push({ t:'referr' });
+    else out.push({ t:'op', v:m[6] });
+    i = TOK.lastIndex;
+  }
+  return out;
+}
+function parse(src){
+  const t = tokenize(src); let k = 0;
+  const op = v => t[k] && t[k].t === 'op' && t[k].v === v;
+  const bad = () => { throw PARSE_ERR(); };
+  const add = () => { let a = mul(); while (op('+') || op('-')) { const o = t[k++].v; a = { k:'bin', o, a, b:mul() }; } return a; };
+  const mul = () => { let a = pow(); while (op('*') || op('/')) { const o = t[k++].v; a = { k:'bin', o, a, b:pow() }; } return a; };
+  const pow = () => { let a = unary(); while (op('^')) { k++; a = { k:'bin', o:'^', a, b:unary() }; } return a; };
+  const unary = () => { if (op('-')) { k++; return { k:'neg', a:unary() }; } if (op('+')) { k++; return unary(); } return post(); };
+  const post = () => { let a = prim(); while (op('%')) { k++; a = { k:'pct', a }; } return a; };
+  function prim(){
+    const x = t[k]; if (!x) bad(); k++;
+    if (x.t === 'num') return { k:'num', v:x.v };
+    if (x.t === 'str') return { k:'str', v:x.v };
+    if (x.t === 'referr') return { k:'error', e:ERR('#REF!', 'This reference points outside the sheet.') };
+    if (x.t === 'ref') {
+      const [p, q] = x.v.split(':'); const A = parseAddr(p);
+      if (!q) return { k:'ref', r:A.r, c:A.c };
+      const B = parseAddr(q);
+      return { k:'range', r1:Math.min(A.r, B.r), c1:Math.min(A.c, B.c), r2:Math.max(A.r, B.r), c2:Math.max(A.c, B.c) };
+    }
+    if (x.t === 'id') {
+      if (op('(')) {
+        k++; const args = [];
+        if (!op(')')) { args.push(add()); while (op(',')) { k++; args.push(add()); } }
+        if (!op(')')) bad(); k++;
+        return { k:'call', n:x.v.toUpperCase(), args };
+      }
+      return { k:'name', n:x.v };
+    }
+    if (x.t === 'op' && x.v === '(') { const e = add(); if (!op(')')) bad(); k++; return e; }
+    bad();
+  }
+  const e = add(); if (k < t.length) bad(); return e;
+}
+
+class Model {
+  constructor(rows, cols, raw){ this.rows = rows; this.cols = cols; this.raw = Object.assign({}, raw || {}); this.cache = null; }
+  get(a){ return this.raw[a] || ''; }
+  set(a, v){ if (v === '' || v == null) delete this.raw[a]; else this.raw[a] = String(v); this.cache = null; }
+  load(raw){ this.raw = Object.assign({}, raw || {}); this.cache = null; }
+  inside(r, c){ return r >= 0 && c >= 0 && r < this.rows && c < this.cols; }
+  val(a){ if (!this.cache) { this.cache = {}; this.visiting = new Set(); } return this._val(a); }
+  _val(a){
+    if (a in this.cache) return this.cache[a];
+    const raw = this.get(a); const tr = raw.trim();
+    let v;
+    if (tr === '') v = null;
+    else if (tr[0] === '=') {
+      if (this.visiting.has(a)) return ERR('#REF!', 'Circular dependency: the formula uses its own cell.');
+      this.visiting.add(a);
+      try {
+        v = this.ev(parse(tr.slice(1)));
+        if (Array.isArray(v)) v = ERR('#VALUE!', 'A range like A1:A3 needs a function such as SUM.');
+        else if (v === null) v = 0;
+      } catch (e) { v = isErr(e) ? e : PARSE_ERR(); }
+      this.visiting.delete(a);
+    }
+    else if (/^-?(\d+\.?\d*|\.\d+)$/.test(tr)) v = parseFloat(tr);
+    else if (/^-?(\d+\.?\d*|\.\d+)%$/.test(tr)) v = parseFloat(tr) / 100;
+    else v = raw;
+    this.cache[a] = v; return v;
+  }
+  cell(r, c){
+    if (!this.inside(r, c)) throw ERR('#REF!', 'This reference points outside the sheet.');
+    const v = this._val(addr(r, c)); if (isErr(v)) throw v; return v;
+  }
+  num(v){
+    if (v === null || v === undefined || v === '') return 0;
+    if (typeof v === 'number') return v;
+    if (typeof v === 'boolean') return v ? 1 : 0;
+    if (Array.isArray(v)) throw ERR('#VALUE!', 'A range like A1:A3 needs a function such as SUM.');
+    const f = Number(v); if (v.trim() !== '' && !isNaN(f)) return f;
+    throw ERR('#VALUE!', `"${v}" is text, so it can't be used in math.`);
+  }
+  ev(n){
+    switch (n.k) {
+      case 'num': case 'str': return n.v;
+      case 'error': throw n.e;
+      case 'name': throw ERR('#NAME?', `Unknown name "${n.n}". Cell names look like A1, and text needs "quotes".`);
+      case 'ref': return this.cell(n.r, n.c);
+      case 'range': { const out = []; for (let r = n.r1; r <= n.r2; r++) for (let c = n.c1; c <= n.c2; c++) out.push(this.cell(r, c)); return out; }
+      case 'neg': return -this.num(this.ev(n.a));
+      case 'pct': return this.num(this.ev(n.a)) / 100;
+      case 'bin': {
+        const a = this.num(this.ev(n.a)), b = this.num(this.ev(n.b));
+        if (n.o === '+') return a + b;
+        if (n.o === '-') return a - b;
+        if (n.o === '*') return a * b;
+        if (n.o === '/') { if (b === 0) throw ERR('#DIV/0!', 'Division by zero. Check the cell you divide by.'); return a / b; }
+        const r = Math.pow(a, b); if (!isFinite(r) || isNaN(r)) throw ERR('#NUM!', 'The result is too big or not a real number.'); return r;
+      }
+      case 'call': return this.call(n);
+    }
+  }
+  call(n){
+    const F = n.n, args = n.args;
+    const nums = () => { const out = []; for (const a of args) { const v = this.ev(a); if (Array.isArray(v)) v.forEach(x => { if (typeof x === 'number') out.push(x); }); else out.push(this.num(v)); } return out; };
+    const one = i => { if (args.length <= i) throw ERR('#N/A', `${F} needs more values in the brackets.`); return this.num(this.ev(args[i])); };
+    switch (F) {
+      case 'SUM': return nums().reduce((s, x) => s + x, 0);
+      case 'AVERAGE': { const a = nums(); if (!a.length) throw ERR('#DIV/0!', 'AVERAGE has no numbers to use.'); return a.reduce((s, x) => s + x, 0) / a.length; }
+      case 'MIN': { const a = nums(); return a.length ? Math.min(...a) : 0; }
+      case 'MAX': { const a = nums(); return a.length ? Math.max(...a) : 0; }
+      case 'COUNT': { let c = 0; for (const a of args) { const v = this.ev(a); if (Array.isArray(v)) c += v.filter(x => typeof x === 'number').length; else if (typeof v === 'number') c++; } return c; }
+      case 'PRODUCT': return nums().reduce((p, x) => p * x, 1);
+      case 'ABS': return Math.abs(one(0));
+      case 'ROUND': { const x = one(0), d = args.length > 1 ? one(1) : 0, m = Math.pow(10, d); return Math.round(x * m) / m; }
+      case 'SQRT': { const x = one(0); if (x < 0) throw ERR('#NUM!', 'SQRT needs a number that is not negative.'); return Math.sqrt(x); }
+      case 'POWER': return Math.pow(one(0), one(1));
+      default: throw ERR('#NAME?', `Unknown function ${F}. Check the spelling.`);
+    }
+  }
+}
+function fmt(v){
+  if (v === null || v === undefined) return '';
+  if (isErr(v)) return v.err;
+  if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
+  if (typeof v === 'number') {
+    if (Number.isInteger(v) && Math.abs(v) < 1e21) return v.toLocaleString('en-US', { useGrouping:false, maximumFractionDigits:0 });
+    return String(parseFloat(v.toPrecision(10)));
+  }
+  return String(v);
+}
+
+/* references inside a formula: for copying and for colors */
+const REF_RE = /("(?:[^"]|"")*")|(\$?)([A-Za-z]{1,3})(\$?)(\d+)(?![\w(])/g;
+function shiftFormula(f, dr, dc){
+  if (!f.trim().startsWith('=')) return f;
+  return f.replace(REF_RE, (m, str, d1, col, d2, row, off, whole) => {
+    if (str) return str;
+    const prev = whole[off - 1];
+    if (prev && /[A-Za-z0-9_.]/.test(prev)) return m;
+    let c = colIndex(col), r = +row - 1;
+    if (!d1) c += dc;
+    if (!d2) r += dr;
+    if (c < 0 || r < 0) return '#REF!';
+    return d1 + colName(c) + d2 + (r + 1);
+  });
+}
+const normalize = f => f.replace(/("(?:[^"]|"")*")|[^"]+/g, (m, s) => s ? s : m.toUpperCase());
+const RANGE_RE = /("(?:[^"]|"")*")|(\$?[A-Za-z]{1,3}\$?\d+(?::\$?[A-Za-z]{1,3}\$?\d+)?)(?![\w(])/g;
+function refsIn(f){
+  const seen = new Map(); let m;
+  if (!f.trim().startsWith('=')) return seen;
+  RANGE_RE.lastIndex = 0;
+  while ((m = RANGE_RE.exec(f))) {
+    if (m[1]) continue;
+    const prev = f[m.index - 1];
+    if (prev && /[A-Za-z0-9_.$]/.test(prev)) continue;
+    const t = m[2].toUpperCase().replace(/\$/g, '');
+    if (seen.has(t)) continue;
+    const [p, q] = t.split(':'); const A = parseAddr(p), B = q ? parseAddr(q) : A;
+    seen.set(t, { color:`var(--r${seen.size % 6})`, r1:Math.min(A.r, B.r), c1:Math.min(A.c, B.c), r2:Math.max(A.r, B.r), c2:Math.max(A.c, B.c) });
+  }
+  return seen;
+}
+function colorFormula(f){
+  if (!f.trim().startsWith('=')) return esc(f);
+  const refs = refsIn(f);
+  let out = '', last = 0, m;
+  RANGE_RE.lastIndex = 0;
+  while ((m = RANGE_RE.exec(f))) {
+    if (m[1]) continue;
+    const prev = f[m.index - 1];
+    if (prev && /[A-Za-z0-9_.$]/.test(prev)) continue;
+    const info = refs.get(m[2].toUpperCase().replace(/\$/g, ''));
+    out += esc(f.slice(last, m.index)) + `<span style="color:${info.color};font-weight:600">${esc(m[2])}</span>`;
+    last = m.index + m[0].length;
+  }
+  return out + esc(f.slice(last));
+}
+
+/* ================= spreadsheet view ================= */
+class SheetView {
+  constructor(host, model, opts = {}){
+    this.host = host; this.m = model; this.o = opts;
+    this.sel = { r:0, c:0 }; this.anc = null; this.edit = null; this.cin = null; this.clip = null;
+    this.showF = false; this.hist = []; this.playId = 0; this.scripting = false; this.dragging = false;
+    this.build(); this.render();
+  }
+  build(){
+    const { rows, cols } = this.m, w = this.o.widths || [];
+    let total = 40, h = `<div class="sheet" tabindex="0" aria-label="Spreadsheet. Use arrow keys to move, type to edit.">
+      <div class="fbar"><span class="nb"></span><span class="fx" aria-hidden="true">fx</span><div class="fdisp" title="Click to edit"></div><input class="fin" hidden spellcheck="false" autocomplete="off" aria-label="Formula bar"></div>
+      <div class="gridwrap"><table class="grid"><colgroup><col style="width:40px">`;
+    for (let c = 0; c < cols; c++) { const cw = w[c] || 92; total += cw; h += `<col style="width:${cw}px">`; }
+    h += `</colgroup><thead><tr><th></th>`;
+    for (let c = 0; c < cols; c++) h += `<th data-col="${c}">${colName(c)}</th>`;
+    h += `</tr></thead><tbody>`;
+    for (let r = 0; r < rows; r++) { h += `<tr><th data-row="${r}">${r + 1}</th>`; for (let c = 0; c < cols; c++) h += `<td data-r="${r}" data-c="${c}"><span class="v"></span></td>`; h += `</tr>`; }
+    h += `</tbody></table></div>`;
+    if (this.o.tools !== false) h += `<div class="tools"><button type="button" data-act="copy" title="Ctrl+C">Copy</button><button type="button" data-act="paste" title="Ctrl+V">Paste</button><button type="button" data-act="undo" title="Ctrl+Z">Undo</button><button type="button" data-act="formulas" aria-pressed="false">Show formulas</button></div>`;
+    h += `</div>`;
+    const tmp = document.createElement('div'); tmp.innerHTML = h;
+    this.root = tmp.firstElementChild; this.host.prepend(this.root);
+    this.root.querySelector('table').style.width = total + 'px';
+    this.nb = this.root.querySelector('.nb'); this.fdisp = this.root.querySelector('.fdisp'); this.fin = this.root.querySelector('.fin');
+    this.tds = [...this.root.querySelectorAll('td')]; this.colHeads = [...this.root.querySelectorAll('th[data-col]')]; this.rowHeads = [...this.root.querySelectorAll('th[data-row]')];
+    this.cells = []; for (const td of this.tds) { (this.cells[+td.dataset.r] ||= [])[+td.dataset.c] = td; }
+
+    const tbody = this.root.querySelector('tbody');
+    tbody.addEventListener('pointerdown', e => this.onDown(e));
+    tbody.addEventListener('pointerover', e => { if (!this.dragging) return; const td = e.target.closest('td'); if (td) { this.anc = { r:+td.dataset.r, c:+td.dataset.c }; this.render(); } });
+    document.addEventListener('pointerup', () => { this.dragging = false; });
+    tbody.addEventListener('dblclick', e => { const td = e.target.closest('td'); if (td && this.edit === null) this.beginEdit(this.raw(), 'cell'); });
+    this.root.addEventListener('keydown', e => this.onKey(e));
+    this.fdisp.addEventListener('click', () => { this.stop(); this.beginEdit(this.raw(), 'bar'); });
+    this.wireInput(this.fin);
+    this.root.querySelectorAll('.tools button').forEach(b => {
+      b.addEventListener('mousedown', e => e.preventDefault());
+      b.addEventListener('click', () => {
+        this.stop(); this.commit(null);
+        const a = b.dataset.act;
+        if (a === 'copy') this.copy();
+        else if (a === 'paste') this.paste();
+        else if (a === 'undo') this.undo();
+        else { this.setShowF(!this.showF); }
+        this.focus();
+      });
+    });
+  }
+  raw(){ return this.m.get(addr(this.sel.r, this.sel.c)); }
+  range(){
+    const a = this.sel, b = this.anc || this.sel;
+    return { r1:Math.min(a.r, b.r), c1:Math.min(a.c, b.c), r2:Math.max(a.r, b.r), c2:Math.max(a.c, b.c) };
+  }
+  focus(){ if (!this.scripting) this.root.focus({ preventScroll:true }); }
+  setShowF(on){ this.showF = on; const b = this.root.querySelector('[data-act="formulas"]'); if (b) b.setAttribute('aria-pressed', String(on)); this.render(); }
+  changed(){ if (this.onchange) this.onchange(); }
+  snap(){ this.hist.push(JSON.stringify(this.m.raw)); if (this.hist.length > 60) this.hist.shift(); }
+  undo(){ if (!this.hist.length) return; this.m.load(JSON.parse(this.hist.pop())); this.render(); this.changed(); }
+  select(a, b){ const p = typeof a === 'string' ? parseAddr(a) : a; this.sel = { r:p.r, c:p.c }; this.anc = b ? (typeof b === 'string' ? parseAddr(b) : b) : null; this.render(); if (this.onselect) this.onselect(); }
+  move(dr, dc, extend){
+    const clamp = (v, n) => Math.max(0, Math.min(n - 1, v));
+    if (extend) { const a = this.anc || { ...this.sel }; this.anc = { r:clamp(a.r + dr, this.m.rows), c:clamp(a.c + dc, this.m.cols) }; }
+    else { this.sel = { r:clamp(this.sel.r + dr, this.m.rows), c:clamp(this.sel.c + dc, this.m.cols) }; this.anc = null; }
+    this.render(); if (this.onselect) this.onselect();
+    const td = this.cells[(extend ? this.anc : this.sel).r][(extend ? this.anc : this.sel).c];
+    if (td && !this.scripting) td.scrollIntoView({ block:'nearest', inline:'nearest' });
+  }
+  canInsertRef(){
+    if (this.edit === null) return false;
+    const t = this.edit.trimEnd();
+    return t.startsWith('=') && /[=+\-*/^(,:&<>]$/.test(t);
+  }
+  onDown(e){
+    const td = e.target.closest('td'); if (!td) return;
+    if (e.button !== undefined && e.button !== 0) return;
+    this.stop();
+    const r = +td.dataset.r, c = +td.dataset.c;
+    if (this.canInsertRef()) {
+      e.preventDefault();
+      this.setEdit(this.edit + addr(r, c));
+      const inp = this.cin || this.fin; inp.focus({ preventScroll:true }); inp.setSelectionRange(inp.value.length, inp.value.length);
+      return;
+    }
+    const same = r === this.sel.r && c === this.sel.c && !this.anc;
+    if (this.edit !== null) this.commit(null);
+    e.preventDefault();
+    this.root.focus({ preventScroll:true });
+    if (same && e.pointerType === 'touch') { this.beginEdit(this.raw(), 'cell'); return; }
+    if (e.shiftKey) this.anc = { r, c };
+    else { this.sel = { r, c }; this.anc = null; this.dragging = true; }
+    this.render(); if (this.onselect) this.onselect();
+  }
+  onKey(e){
+    if (e.target !== this.root) return;
+    this.stop();
+    const k = e.key, mod = e.ctrlKey || e.metaKey;
+    if (mod && (k === 'c' || k === 'C')) { e.preventDefault(); this.copy(); return; }
+    if (mod && (k === 'v' || k === 'V')) { e.preventDefault(); this.paste(); return; }
+    if (mod && (k === 'z' || k === 'Z')) { e.preventDefault(); this.undo(); return; }
+    if (mod && k === '`') { e.preventDefault(); this.setShowF(!this.showF); return; }
+    if (mod || e.altKey) return;
+    const arrows = { ArrowUp:[-1,0], ArrowDown:[1,0], ArrowLeft:[0,-1], ArrowRight:[0,1] };
+    if (arrows[k]) { e.preventDefault(); this.move(...arrows[k], e.shiftKey); return; }
+    if (k === 'Tab') { e.preventDefault(); this.move(0, e.shiftKey ? -1 : 1); return; }
+    if (k === 'Enter' || k === 'F2') { e.preventDefault(); this.beginEdit(this.raw(), 'cell'); return; }
+    if (k === 'Escape') { this.clip = null; this.render(); return; }
+    if (k === 'Delete' || k === 'Backspace') {
+      e.preventDefault(); const R = this.range(); this.snap();
+      for (let r = R.r1; r <= R.r2; r++) for (let c = R.c1; c <= R.c2; c++) this.m.set(addr(r, c), '');
+      this.render(); this.changed(); return;
+    }
+    if (k.length === 1) { e.preventDefault(); this.beginEdit(k, 'cell'); }
+  }
+  wireInput(inp){
+    inp.addEventListener('input', () => {
+      this.edit = inp.value;
+      if (inp === this.fin) { if (this.cin) this.cin.value = inp.value; } else this.fin.value = inp.value;
+      this.sizeInput(); this.render();
+    });
+    inp.addEventListener('keydown', e => {
+      e.stopPropagation();
+      if (e.key === 'Enter') { e.preventDefault(); this.commit('down'); }
+      else if (e.key === 'Tab') { e.preventDefault(); this.commit('right'); }
+      else if (e.key === 'Escape') { e.preventDefault(); this.cancel(); }
+    });
+    inp.addEventListener('blur', () => {
+      setTimeout(() => {
+        if (this.edit !== null && !this.scripting && document.activeElement !== this.cin && document.activeElement !== this.fin) this.commit(null, true);
+      }, 0);
+    });
+  }
+  beginEdit(text, via, quiet){
+    this.removeInput();
+    this.edit = text; this.fin.value = text;
+    if (via === 'cell') {
+      const td = this.cells[this.sel.r][this.sel.c];
+      const inp = document.createElement('input');
+      inp.className = 'cellin'; inp.value = text; inp.spellcheck = false; inp.autocomplete = 'off';
+      inp.setAttribute('autocapitalize', 'off'); inp.setAttribute('aria-label', 'Edit cell ' + addr(this.sel.r, this.sel.c));
+      td.appendChild(inp); this.cin = inp; this.wireInput(inp); this.sizeInput();
+      if (!quiet) { inp.focus({ preventScroll:true }); inp.setSelectionRange(text.length, text.length); }
+    } else if (!quiet) { this.render(); this.fin.focus({ preventScroll:true }); this.fin.setSelectionRange(text.length, text.length); }
+    this.render();
+  }
+  setEdit(v){ this.edit = v; if (this.cin) this.cin.value = v; this.fin.value = v; this.sizeInput(); this.render(); }
+  sizeInput(){ if (this.cin) this.cin.style.width = `max(calc(100% + 2px), ${this.cin.value.length + 3}ch)`; }
+  removeInput(){ if (this.cin) { const c = this.cin; this.cin = null; c.remove(); } }
+  commit(dir, fromBlur){
+    if (this.edit === null) return;
+    let v = this.edit;
+    if (v.trim().startsWith('=')) v = normalize(v.trim());
+    const a = addr(this.sel.r, this.sel.c);
+    if (this.m.get(a) !== v) { this.snap(); this.m.set(a, v); this.changed(); }
+    this.removeInput(); this.edit = null;
+    if (dir === 'down') this.move(1, 0); else if (dir === 'right') this.move(0, 1);
+    this.render();
+    if (!fromBlur) this.focus();
+  }
+  cancel(){ this.removeInput(); this.edit = null; this.render(); this.focus(); }
+  copy(){
+    const R = this.range(), raws = [];
+    for (let r = R.r1; r <= R.r2; r++) { const row = []; for (let c = R.c1; c <= R.c2; c++) row.push(this.m.get(addr(r, c))); raws.push(row); }
+    this.clip = { ...R, raws }; this.render();
+  }
+  paste(){
+    if (!this.clip) return;
+    const C = this.clip, T = this.range(), h = C.r2 - C.r1 + 1, w = C.c2 - C.c1 + 1;
+    const multi = T.r2 > T.r1 || T.c2 > T.c1;
+    this.snap(); const touched = [];
+    if (multi && (h > 1 || w > 1) === false || multi && ((T.r2 - T.r1 + 1) % h === 0 && (T.c2 - T.c1 + 1) % w === 0)) {
+      for (let r = T.r1; r <= T.r2; r++) for (let c = T.c1; c <= T.c2; c++) {
+        const i = (r - T.r1) % h, j = (c - T.c1) % w;
+        this.m.set(addr(r, c), shiftFormula(C.raws[i][j], r - (C.r1 + i), c - (C.c1 + j))); touched.push([r, c]);
+      }
+    } else {
+      for (let i = 0; i < h; i++) for (let j = 0; j < w; j++) {
+        const r = T.r1 + i, c = T.c1 + j; if (!this.m.inside(r, c)) continue;
+        this.m.set(addr(r, c), shiftFormula(C.raws[i][j], r - (C.r1 + i), c - (C.c1 + j))); touched.push([r, c]);
+      }
+      if (h > 1 || w > 1) { this.sel = { r:T.r1, c:T.c1 }; this.anc = { r:Math.min(this.m.rows - 1, T.r1 + h - 1), c:Math.min(this.m.cols - 1, T.c1 + w - 1) }; }
+    }
+    this.render(); this.changed();
+    touched.forEach(([r, c]) => { const td = this.cells[r][c]; td.classList.remove('pasted'); void td.offsetWidth; td.classList.add('pasted'); });
+  }
+  flash(cells){ cells.forEach(a => { const p = parseAddr(a); const td = this.cells[p.r][p.c]; td.classList.remove('good'); void td.offsetWidth; td.classList.add('good'); }); }
+  render(){
+    const R = this.range(), multi = R.r2 > R.r1 || R.c2 > R.c1;
+    const active = this.edit !== null ? this.edit : this.raw();
+    const refs = refsIn(active);
+    const refAt = (r, c) => { for (const x of refs.values()) if (r >= x.r1 && r <= x.r2 && c >= x.c1 && c <= x.c2) return x.color; return null; };
+    const C = this.clip;
+    for (const td of this.tds) {
+      const r = +td.dataset.r, c = +td.dataset.c, a = addr(r, c), raw = this.m.get(a), v = this.m.val(a);
+      const showRaw = this.showF && raw.trim().startsWith('=');
+      td.firstElementChild.textContent = showRaw ? raw : fmt(v);
+      td.className = '';
+      if (showRaw) td.classList.add('fml');
+      else if (isErr(v)) td.classList.add('err');
+      else if (typeof v === 'number') td.classList.add('num');
+      if (r === this.sel.r && c === this.sel.c) td.classList.add('sel');
+      if (multi && r >= R.r1 && r <= R.r2 && c >= R.c1 && c <= R.c2) td.classList.add('inrange');
+      if (C && r >= C.r1 && r <= C.r2 && c >= C.c1 && c <= C.c2) td.classList.add('clip');
+      const rc = refAt(r, c);
+      if (rc) { td.classList.add('ref'); td.style.setProperty('--rc', rc); } else td.style.removeProperty('--rc');
+      td.title = isErr(v) ? `${v.err}: ${v.msg}` : '';
+    }
+    this.colHeads.forEach((th, c) => th.classList.toggle('hsel', c >= R.c1 && c <= R.c2));
+    this.rowHeads.forEach((th, r) => th.classList.toggle('hsel', r >= R.r1 && r <= R.r2));
+    this.nb.textContent = multi ? `${addr(R.r1, R.c1)}:${addr(R.r2, R.c2)}` : addr(this.sel.r, this.sel.c);
+    const editingBar = this.edit !== null && document.activeElement === this.fin;
+    if (this.edit === null) { this.fdisp.hidden = false; this.fin.hidden = true; this.fdisp.innerHTML = colorFormula(this.raw()); }
+    else if (this.cin && !editingBar) { this.fdisp.hidden = false; this.fin.hidden = true; this.fdisp.innerHTML = colorFormula(this.edit); }
+    else { this.fdisp.hidden = true; this.fin.hidden = false; }
+  }
+  stop(){ if (this.scripting) { this.playId++; this.scripting = false; if (this.edit !== null) { this.removeInput(); this.edit = null; this.render(); } } }
+  async play(steps, ctx = {}){
+    const id = ++this.playId; this.scripting = true;
+    const alive = () => id === this.playId;
+    const fast = reduced || ctx.instant;
+    const wait = ms => new Promise(r => setTimeout(r, fast ? 0 : ms));
+    for (const s of steps) {
+      if (!alive()) return;
+      const [k, a, b] = s;
+      if (k === 'sel') { this.select(a, b); await wait(420); }
+      else if (k === 'type') {
+        this.beginEdit('', 'cell', true);
+        if (fast) this.setEdit(a);
+        else for (const ch of a) { if (!alive()) return; this.setEdit(this.edit + ch); await wait(95); }
+        await wait(300);
+      }
+      else if (k === 'more') {
+        if (fast) this.setEdit(this.edit + a);
+        else for (const ch of a) { if (!alive()) return; this.setEdit(this.edit + ch); await wait(95); }
+        await wait(300);
+      }
+      else if (k === 'enter') { this.commit(null); await wait(500); }
+      else if (k === 'set') { for (const [ad, v] of Object.entries(a)) this.m.set(ad, v); this.render(); }
+      else if (k === 'copy') { this.copy(); await wait(650); }
+      else if (k === 'paste') { this.paste(); await wait(800); }
+      else if (k === 'say') { if (ctx.say) ctx.say.innerHTML = a; }
+      else if (k === 'step') { if (ctx.steps) ctx.steps.forEach((li, i) => li.classList.toggle('now', i === a)); }
+      else if (k === 'wait') { await wait(a); }
+      else if (k === 'formulas') { this.setShowF(a); }
+      else if (k === 'clip') { this.clip = null; this.render(); }
+    }
+    if (alive()) this.scripting = false;
+  }
+}
+
+/* ================= demos ================= */
+const DEMOS = {
+  hero: {
+    rows:5, cols:2, widths:[130,110],
+    init:{ A1:'Width', B1:'60', A2:'Length', B2:'120', A3:'Area', A4:'Perimeter' },
+    script:[
+      ['say','Width and length are typed in column B.'], ['sel','B1','B2'], ['wait',900],
+      ['sel','B3'], ['say','Area: type a formula into <b>B3</b>.'], ['type','=B1*B2'], ['enter'],
+      ['say','<code>=B1*B2</code> gives <b>7200</b>. It uses the cells, not the numbers.'], ['wait',1200],
+      ['sel','B4'], ['say','Perimeter: <code>=2*(B1+B2)</code>'], ['type','=2*(B1+B2)'], ['enter'], ['wait',900],
+      ['sel','B1'], ['say','Now change the width to <b>100</b>…'], ['type','100'], ['enter'],
+      ['say','…and both answers update by themselves.'], ['sel','B3']
+    ]
+  },
+  address: {
+    rows:7, cols:5, widths:[70,70,70,70,70], tools:false, init:{},
+    script:[['sel','A1'],['wait',900],['sel','B3'],['wait',1100],['sel','D5'],['wait',1100],['sel','E2'],['wait',1100],['sel','C4']]
+  },
+  ops: {
+    rows:4, cols:2, widths:[100,150], init:{ A1:'12', A2:'4', B1:'← first number', B2:'← second number', B3:'← formula' },
+    script:[]
+  },
+  enter: {
+    rows:5, cols:3, widths:[90,90,90], init:{},
+    script:[
+      ['step',0], ['sel','A1'], ['type','7'], ['enter'], ['sel','A2'], ['type','3'], ['enter'],
+      ['step',1], ['sel','A3'], ['wait',500],
+      ['step',2], ['type','='], ['wait',500],
+      ['step',3], ['more','A1+A2'], ['enter'], ['sel','A3'], ['wait',1400],
+      ['step',-1], ['sel','A1'], ['type','20'], ['enter'], ['sel','A3']
+    ],
+    sayDone:'A3 contains <code>=A1+A2</code>. When A1 changed to 20, A3 became 23 by itself.'
+  },
+  copy: {
+    rows:5, cols:2, widths:[110,110], init:{ A1:'3', A2:'3', A3:'7', B1:'5', B2:'8', B3:'3' },
+    script:[
+      ['step',0], ['sel','A4'], ['type','=A1*(A2+A3)'], ['enter'], ['sel','A4'], ['wait',900],
+      ['step',1], ['copy'], ['wait',400],
+      ['step',2], ['sel','B4'], ['paste'], ['wait',300],
+      ['step',3], ['sel','B4'], ['formulas',true], ['wait',1800], ['formulas',false]
+    ]
+  },
+  dollar: {
+    rows:7, cols:2, widths:[110,170], init:{ A1:'Constant', B1:'1024', A2:'TB', B2:'15', A3:'GB', A4:'MB', A5:'KB', A6:'B' },
+    script:[
+      ['say','Try 1: <code>=B2*B1</code> in B3.'], ['sel','B3'], ['type','=B2*B1'], ['enter'], ['sel','B3'], ['wait',600],
+      ['copy'], ['sel','B4'], ['paste'], ['wait',300],
+      ['say','B4 became <code>=B3*B2</code>. The constant moved, so the answer is wrong.'], ['wait',2600],
+      ['clip'], ['set',{ B3:'', B4:'' }],
+      ['say','Try 2: lock the constant with <code>$B$1</code>.'], ['sel','B3'], ['type','=B2*$B$1'], ['enter'], ['sel','B3'], ['wait',600],
+      ['copy'], ['sel','B4','B6'], ['paste'], ['wait',300], ['sel','B6'],
+      ['say','Every row still multiplies by <code>$B$1</code>. 15 TB = 16 492 674 416 640 bytes.']
+    ]
+  },
+  funcs: {
+    rows:10, cols:2, widths:[110,110],
+    init:{ A1:'Student', B1:'Score', A2:'Aruzhan', B2:'87', A3:'Dias', B3:'72', A4:'Madina', B4:'95', A5:'Timur', B5:'64', A6:'Zhanna', B6:'81', A7:'Sum', A8:'Average', A9:'Max', A10:'Min' },
+    script:[
+      ['sel','B7'], ['type','=SUM(B2:B6)'], ['enter'], ['wait',500],
+      ['sel','B8'], ['type','=AVERAGE(B2:B6)'], ['enter'], ['wait',300],
+      ['sel','B9'], ['type','=MAX(B2:B6)'], ['enter'], ['wait',300],
+      ['sel','B10'], ['type','=MIN(B2:B6)'], ['enter'], ['sel','B8']
+    ]
+  },
+  errors: {
+    rows:6, cols:2, widths:[110,130],
+    init:{ A1:'10', A2:'0', B1:'=A1/A2', B2:'=SUMM(A1:A2)', B3:'=A1+*2', B4:'=B4+1', B5:'=A1*2' },
+    script:[['sel','B1']]
+  }
+};
+const OPS = [
+  { s:'+', name:'Addition', f:'=A1+A2' },
+  { s:'-', name:'Subtraction', f:'=A1-A2' },
+  { s:'*', name:'Multiplication', f:'=A1*A2' },
+  { s:'/', name:'Division', f:'=A1/A2' },
+  { s:'^', name:'Exponent (power)', f:'=A1^A2' }
+];
+
+/* ================= tasks ================= */
+const range2 = (c1, r1, c2, r2) => { const o = []; for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) o.push(addr(r, c)); return o; };
+const TASKS = [
+{
+  id:'rect', title:'Rectangle calculator', uses:['* operator','+ operator','cell names'],
+  lead:'Make a program that calculates the <b>area</b> and the <b>perimeter</b> of a rectangle from its width and length.',
+  steps:['In B3, write a formula for the area: width × length.','In B4, write a formula for the perimeter: 2 × (width + length).','Then change the width or length. Both answers must update.'],
+  hint:'Use the cell names B1 and B2, not 60 and 120. Brackets work like in math: <code>2*(… + …)</code>.',
+  rows:5, cols:2, widths:[130,120],
+  init:{ A1:'Width', B1:'60', A2:'Length', B2:'120', A3:'Area', A4:'Perimeter' },
+  tests:[{ set:{ B1:'60', B2:'120' }, expect:{ B3:7200, B4:360 } }, { set:{ B1:'7', B2:'5' }, expect:{ B3:35, B4:24 } }],
+  checks:[{ label:'B3 calculates the area', cells:['B3'] }, { label:'B4 calculates the perimeter', cells:['B4'] }]
+},
+{
+  id:'data', title:'Data measurement', uses:['$ absolute','copy / paste','*'],
+  lead:'There is <b>15 TB</b> of information. Convert it to gigabytes, megabytes, kilobytes and bytes using the constant <b>1024</b>.',
+  steps:['In B3, multiply the TB value (B2) by the constant (B1). Make the constant absolute.','Copy B3 and paste it into B4:B6. Drag from B4 to B6 to select all three.','Every row multiplies the row above it by 1024.'],
+  hint:'B3: <code>=B2*$B$1</code>. B2 is relative, so after copying, B4 uses B3, B5 uses B4. $B$1 stays the same.',
+  rows:7, cols:2, widths:[110,190],
+  init:{ A1:'Constant', B1:'1024', A2:'TB', B2:'15', A3:'GB', A4:'MB', A5:'KB', A6:'B' },
+  tests:[
+    { set:{ B1:'1024', B2:'15' }, expect:{ B3:15360, B4:15728640, B5:16106127360, B6:16492674416640 } },
+    { set:{ B1:'1000', B2:'2' }, expect:{ B3:2000, B4:2e6, B5:2e9, B6:2e12 } }
+  ],
+  checks:[
+    { label:'B3 converts TB to GB', cells:['B3'] },
+    { label:'B4, B5 and B6 convert to MB, KB and bytes', cells:['B4','B5','B6'] },
+    { label:'The constant is absolute ($B$1)', cells:['B3','B4','B5','B6'], contains:'$B$1', msg:'{a} should use $B$1, so the constant stays in place when you copy.' }
+  ]
+},
+{
+  id:'machine', title:'Difference machine', uses:['ABS','copy / paste','relative refs'],
+  lead:'This machine takes 4 numbers in the first row. In each row below, it computes the differences of neighbours, always as a positive number.',
+  steps:['In A2, write <code>=ABS(A1-B1)</code>. Copy it to B2 and C2.','Copy A2 into A3:B3, and then into A4.','With 12, 8, 5, 2 the last row shows 1. Then answer the question below.'],
+  hint:'ABS removes the minus sign: <code>=ABS(5-8)</code> gives 3. Because the references are relative, the same formula works everywhere after copying.',
+  rows:5, cols:4, widths:[80,80,80,80],
+  init:{ A1:'12', B1:'8', C1:'5', D1:'2' },
+  tests:[
+    { set:{ A1:'12', B1:'8', C1:'5', D1:'2' }, expect:{ A2:4, B2:3, C2:3, A3:1, B3:0, A4:1 } },
+    { set:{ A1:'16', B1:'9', C1:'4', D1:'1' }, expect:{ A2:7, B2:5, C2:3, A3:2, B3:2, A4:0 } }
+  ],
+  checks:[
+    { label:'Row 2: A2, B2, C2', cells:['A2','B2','C2'] },
+    { label:'Row 3: A3, B3', cells:['A3','B3'] },
+    { label:'Row 4: A4 gives the final result', cells:['A4'] }
+  ],
+  question:{
+    text:'Which input numbers give <b>0</b> in the last row? Type each set into row 1 to test.',
+    options:['A. 13 9 7 6','B. 16 9 4 1','C. 13 8 4 2','D. 5 5 5 1'], right:1,
+    why:'16, 9, 4, 1 → 7, 5, 3 → 2, 2 → <b>0</b>.'
+  }
+},
+{
+  id:'shop', title:'School shop receipt', uses:['*','SUM','-'],
+  lead:'Make a receipt that calculates the cost of each item, the total, and the price after the discount.',
+  steps:['D2: Price × Qty. Copy it to D3 and D4.','D5: the total of D2:D4. Use SUM.','D7: the total minus the discount percent in B6.'],
+  hint:'D2: <code>=B2*C2</code>. D5: <code>=SUM(D2:D4)</code>. A 10% discount is <code>D5*B6/100</code>, so take that away from D5.',
+  rows:8, cols:4, widths:[110,80,70,90],
+  init:{ A1:'Item', B1:'Price', C1:'Qty', D1:'Cost', A2:'Notebook', B2:'450', C2:'3', A3:'Pen', B3:'120', C3:'5', A4:'Ruler', B4:'200', C4:'2', A5:'Total', A6:'Discount %', B6:'10', A7:'To pay' },
+  tests:[
+    { set:{ B2:'450', C2:'3', B3:'120', C3:'5', B4:'200', C4:'2', B6:'10' }, expect:{ D2:1350, D3:600, D4:400, D5:2350, D7:2115 } },
+    { set:{ B2:'100', C2:'2', B3:'50', C3:'1', B4:'10', C4:'10', B6:'50' }, expect:{ D2:200, D3:50, D4:100, D5:350, D7:175 } }
+  ],
+  checks:[
+    { label:'D2, D3, D4 calculate each cost', cells:['D2','D3','D4'] },
+    { label:'D5 calculates the total', cells:['D5'] },
+    { label:'D7 subtracts the discount', cells:['D7'] }
+  ]
+},
+{
+  id:'powers', title:'Powers of two', uses:['^ operator','copy down'],
+  lead:'Computers count in powers of two. Fill column B with 2<sup>n</sup> for n from 1 to 10.',
+  steps:['In B2, write a formula that raises 2 to the power in A2.','Copy B2 and paste it into B3:B11.','Look at B11. Where have you seen this number in this lesson?'],
+  hint:'The power operator is <code>^</code>: <code>=2^A2</code>. 2<sup>10</sup> = 1024, the constant from Data measurement.',
+  rows:11, cols:2, widths:[80,120],
+  init:Object.assign({ A1:'n', B1:'2^n' }, Object.fromEntries(Array.from({ length:10 }, (_, i) => [`A${i + 2}`, String(i + 1)]))),
+  tests:[
+    { set:Object.fromEntries(Array.from({ length:10 }, (_, i) => [`A${i + 2}`, String(i + 1)])), expect:Object.fromEntries(Array.from({ length:10 }, (_, i) => [`B${i + 2}`, Math.pow(2, i + 1)])) },
+    { set:Object.fromEntries(Array.from({ length:10 }, (_, i) => [`A${i + 2}`, String(i)])), expect:Object.fromEntries(Array.from({ length:10 }, (_, i) => [`B${i + 2}`, Math.pow(2, i)])) }
+  ],
+  checks:[
+    { label:'B2 calculates 2 to the power of A2', cells:['B2'] },
+    { label:'B3 to B11 are filled by copying', cells:range2(1, 2, 1, 10) }
+  ]
+},
+{
+  id:'table', title:'Multiplication table (bonus)', uses:['$A2','B$1','mixed refs'],
+  lead:'Fill the whole 5 × 5 table with <b>one</b> formula. Write it in B2, then copy it to B2:F6.',
+  steps:['Each cell multiplies the number in column A of its row by the number in row 1 of its column.','Lock only the column of the first reference, and only the row of the second.','Select B2:F6 by dragging, then paste.'],
+  hint:'<code>=$A2*B$1</code>. $A keeps column A, $1 keeps row 1. Everything else moves when you copy.',
+  rows:6, cols:6, widths:[56,64,64,64,64,64],
+  init:{ A1:'×', B1:'1', C1:'2', D1:'3', E1:'4', F1:'5', A2:'1', A3:'2', A4:'3', A5:'4', A6:'5' },
+  tests:(() => {
+    const mk = (cols, rows) => {
+      const set = {}, expect = {};
+      cols.forEach((v, j) => set[addr(0, j + 1)] = String(v));
+      rows.forEach((v, i) => set[addr(i + 1, 0)] = String(v));
+      rows.forEach((rv, i) => cols.forEach((cv, j) => expect[addr(i + 1, j + 1)] = rv * cv));
+      return { set, expect };
+    };
+    return [mk([1,2,3,4,5],[1,2,3,4,5]), mk([2,3,4,5,6],[6,7,8,9,10])];
+  })(),
+  checks:[
+    { label:'B2 multiplies its row number by its column number', cells:['B2'] },
+    { label:'The whole table B2:F6 is filled', cells:range2(1, 1, 5, 5).filter(a => a !== 'B2') }
+  ]
+}
+];
+
+function runChecks(task, model){
+  return task.checks.map(ch => {
+    let ok = true, msg = '';
+    for (const a of ch.cells) {
+      const raw = model.get(a).trim();
+      if (!raw.startsWith('=')) { ok = false; msg = raw ? `${a} has a typed value. Write a formula that starts with =.` : `${a} is empty. Write a formula there.`; break; }
+    }
+    if (ok) {
+      outer: for (let ti = 0; ti < task.tests.length; ti++) {
+        const test = task.tests[ti];
+        const mm = new Model(model.rows, model.cols, Object.assign({}, model.raw, test.set));
+        for (const a of ch.cells) {
+          if (!(a in test.expect)) continue;
+          const v = mm.val(a), exp = test.expect[a];
+          if (isErr(v)) { ok = false; msg = `${a} shows ${v.err}. ${v.msg}`; break outer; }
+          if (typeof v !== 'number' || Math.abs(v - exp) > 1e-6 * Math.max(1, Math.abs(exp))) {
+            ok = false;
+            msg = ti === 0 ? `${a} shows ${fmt(v) || 'nothing'}, but it should be ${fmt(exp)}.` : `${a} is only right for these numbers. Use cell names instead of typed numbers.`;
+            break outer;
+          }
+        }
+      }
+    }
+    if (ok && ch.contains) {
+      for (const a of ch.cells) if (!model.get(a).toUpperCase().replace(/\s/g, '').includes(ch.contains)) { ok = false; msg = ch.msg.replace('{a}', a); break; }
+    }
+    return { label:ch.label, ok, msg };
+  });
+}
+
+/* build task slides */
+const summary = document.getElementById('summary');
+const taskList = document.getElementById('tasklist');
+TASKS.forEach((t, n) => {
+  const sec = document.createElement('section');
+  sec.className = 'slide task'; sec.dataset.title = `Task ${n + 1}: ${t.title}`; sec.dataset.task = t.id;
+  const chips = t.uses.map(u => `<span class="chip">${esc(u)}</span>`).join('');
+  const q = t.question ? `<div class="card stack" style="gap:10px"><p>${t.question.text}</p><div class="mq">${t.question.options.map((o, i) => `<button class="opt" type="button" data-i="${i}">${esc(o)}</button>`).join('')}</div><p class="why" hidden>${t.question.why}</p></div>` : '';
+  sec.innerHTML = `
+  <div class="slide-inner">
+    <header class="slide-head">
+      <div class="stack" style="gap:10px"><p class="eyebrow">Practice · Task ${n + 1} of ${TASKS.length}</p><h2>${esc(t.title)}</h2></div>
+      <div class="chips" aria-label="You will use">${chips}</div>
+    </header>
+    <div class="split">
+      <div class="stack">
+        <p class="lead">${t.lead}</p>
+        <ul class="steps">${t.steps.map(s => `<li>${s}</li>`).join('')}</ul>
+        <details class="hint"><summary>Need a hint?</summary><p>${t.hint}</p></details>
+        ${q}
+        <div class="row">
+          <button class="btn primary check" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>Check my sheet</button>
+          <button class="btn reset" type="button">Start over</button>
+        </div>
+        <div class="feedback" role="status" aria-live="polite"></div>
+      </div>
+      <div class="sheet-host"></div>
+    </div>
+  </div>`;
+  summary.before(sec);
+
+  const host = sec.querySelector('.sheet-host');
+  const key = 'fx8-task-' + t.id;
+  let saved = null; try { saved = JSON.parse(store.get(key) || 'null'); } catch(e){}
+  const view = new SheetView(host, new Model(t.rows, t.cols, saved || t.init), { widths:t.widths });
+  sec._view = view;
+  view.onchange = () => store.set(key, JSON.stringify(view.m.raw));
+  const fb = sec.querySelector('.feedback');
+  sec.querySelector('.check').addEventListener('click', () => {
+    const res = runChecks(t, view.m), all = res.every(r => r.ok);
+    fb.innerHTML = (all ? `<p class="win">All correct. Great work!</p>` : '') +
+      `<ul class="results">${res.map(r => `<li class="${r.ok ? 'ok' : 'no'}"><span class="ic">${r.ok ? '✓' : '✗'}</span><span>${esc(r.label)}${r.ok ? '' : `<small>${esc(r.msg)}</small>`}</span></li>`).join('')}</ul>`;
+    if (all) view.flash(t.checks.flatMap(c => c.cells));
+  });
+  const resetBtn = sec.querySelector('.reset'); let armed = 0;
+  resetBtn.addEventListener('click', () => {
+    if (!armed) { resetBtn.textContent = 'Click again to clear'; armed = setTimeout(() => { armed = 0; resetBtn.textContent = 'Start over'; }, 3000); return; }
+    clearTimeout(armed); armed = 0; resetBtn.textContent = 'Start over';
+    view.snap(); view.m.load(t.init); view.clip = null; view.select('A1'); store.del(key); fb.innerHTML = '';
+  });
+  if (t.question) {
+    const wrap = sec.querySelector('.mq');
+    wrap.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+      wrap.querySelectorAll('.opt').forEach(o => o.classList.remove('wrong'));
+      if (+b.dataset.i === t.question.right) { b.classList.add('right'); wrap.nextElementSibling.hidden = false; }
+      else b.classList.add('wrong');
+    }));
+  }
+  const li = document.createElement('li');
+  li.innerHTML = `<button type="button"><span>${n + 1}. ${esc(t.title)}</span><span class="chips">${chips}</span></button>`;
+  li.querySelector('button').addEventListener('click', () => goTo(slides.indexOf(sec)));
+  taskList.appendChild(li);
+});
+
+/* build demo sheets */
+document.querySelectorAll('.sheet-host[data-demo]').forEach(host => {
+  const cfg = DEMOS[host.dataset.demo];
+  const view = new SheetView(host, new Model(cfg.rows, cfg.cols, cfg.init), { widths:cfg.widths, tools:cfg.tools });
+  host._view = view; host._cfg = cfg;
+  const cap = document.createElement('div'); cap.className = 'caption';
+  cap.innerHTML = `<p class="say"></p><button class="btn small replay" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>Replay</button>`;
+  host.appendChild(cap);
+  host._say = cap.querySelector('.say');
+  const slide = host.closest('.slide');
+  const stepsList = slide.querySelector('.live-steps');
+  host._steps = stepsList ? [...stepsList.children] : null;
+  cap.querySelector('.replay').addEventListener('click', () => startDemo(host));
+});
+function startDemo(host, script){
+  const v = host._view, cfg = host._cfg;
+  v.stop(); v.clip = null; v.hist = []; v.setShowF(false); v.m.load(cfg.init); v.select('A1');
+  host._say.innerHTML = '';
+  if (host._steps) host._steps.forEach(li => li.classList.remove('now'));
+  const p = v.play(script || cfg.script, { say:host._say, steps:host._steps });
+  if (cfg.sayDone) p.then(() => { if (!v.scripting) host._say.innerHTML = cfg.sayDone; });
+}
+
+/* operators slide */
+const opsHost = document.querySelector('[data-demo="ops"]');
+const opsList = document.getElementById('ops');
+OPS.forEach((o, i) => {
+  const li = document.createElement('li');
+  li.innerHTML = `<button type="button" aria-pressed="false"><span class="sym">${esc(o.s)}</span><span>${o.name}</span><span class="ex">${esc(o.f)}</span></button>`;
+  li.firstElementChild.addEventListener('click', () => playOp(i));
+  opsList.appendChild(li);
+});
+function playOp(i){
+  const o = OPS[i];
+  opsList.querySelectorAll('button').forEach((b, j) => b.setAttribute('aria-pressed', String(i === j)));
+  startDemo(opsHost, [['sel','A3'], ['say',`${o.name}: <code>${esc(o.f)}</code>`], ['type',o.f], ['enter'], ['sel','A3']]);
+}
+opsHost._cfg.script = null;
+
+/* address slide */
+const addrHost = document.querySelector('[data-demo="address"]');
+addrHost._view.onselect = () => {
+  const s = addrHost._view.sel;
+  document.getElementById('addrBig').textContent = addr(s.r, s.c);
+  document.getElementById('addrParts').innerHTML = `column <b>${colName(s.c)}</b>, row <b>${s.r + 1}</b>`;
+};
+addrHost.querySelector('.caption').hidden = true;
+
+/* reference lab */
+const REFS = [
+  { r:'A1', note:'Relative: the column letter and the row number both move.' },
+  { r:'$A$1', note:'Absolute: it is the same in every cell.' },
+  { r:'A$1', note:'Row locked: only the column letter moves.' },
+  { r:'$A1', note:'Column locked: only the row number moves.' }
+];
+const refpick = document.getElementById('refpick'), refgrid = document.getElementById('refgrid');
+REFS.forEach((x, i) => {
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = x.r;
+  b.addEventListener('click', () => drawRef(i)); refpick.appendChild(b);
+});
+function drawRef(i){
+  const x = REFS[i];
+  refpick.querySelectorAll('button').forEach((b, j) => b.setAttribute('aria-pressed', String(i === j)));
+  document.getElementById('refSrc').textContent = '=' + x.r;
+  document.getElementById('refNote').textContent = x.note;
+  let h = '<tr><th></th>'; for (let c = 1; c <= 4; c++) h += `<th>${colName(c)}</th>`; h += '</tr>';
+  for (let r = 1; r <= 4; r++) {
+    h += `<tr><th>${r + 1}</th>`;
+    for (let c = 1; c <= 4; c++) {
+      const f = shiftFormula('=' + x.r, r - 1, c - 1);
+      const m = /^=(\$?)([A-Z]+)(\$?)(\d+)$/.exec(f);
+      const part = (lock, txt) => `<span class="${lock ? 'fix' : 'chg'}">${lock}${txt}</span>`;
+      const body = m ? '=' + part(m[1], m[2]) + part(m[3], m[4]) : esc(f);
+      h += `<td class="${r === 1 && c === 1 ? 'src' : ''}" style="animation-delay:${(r + c) * 55}ms">${body}</td>`;
+    }
+    h += '</tr>';
+  }
+  refgrid.innerHTML = h;
+}
+drawRef(0);
+
+/* quiz */
+document.querySelectorAll('.q').forEach(q => {
+  q.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+    q.querySelectorAll('.opt').forEach(o => o.classList.remove('wrong'));
+    if (b.hasAttribute('data-right')) { b.classList.add('right'); q.querySelector('.why').hidden = false; }
+    else b.classList.add('wrong');
+  }));
+});
+
+/* ================= navigation ================= */
+const slides = [...document.querySelectorAll('.slide')];
+const prevBtn = document.getElementById('prev'), nextBtn = document.getElementById('next');
+const countEl = document.getElementById('count'), titleEl = document.getElementById('stitle'), progEl = document.getElementById('prog');
+let cur = -1;
+function enter(sec){
+  sec.querySelectorAll('.sheet-host[data-demo]').forEach(host => {
+    if (host === opsHost) playOp(0);
+    else startDemo(host);
+  });
+  if (sec.id === 'refslide') drawRef(0);
+}
+function leave(sec){ sec.querySelectorAll('.sheet-host').forEach(h => h._view && h._view.stop()); }
+function goTo(n, fromHash){
+  n = Math.max(0, Math.min(slides.length - 1, n));
+  if (n === cur) return;
+  const prev = cur; cur = n;
+  slides.forEach((s, i) => { s.classList.toggle('active', i === n); s.classList.toggle('before', i < n); s.setAttribute('aria-hidden', String(i !== n)); s.inert = i !== n; });
+  slides[n].scrollTop = 0;
+  countEl.textContent = `${n + 1} / ${slides.length}`;
+  titleEl.textContent = slides[n].dataset.title || '';
+  progEl.style.width = `${((n + 1) / slides.length) * 100}%`;
+  prevBtn.disabled = n === 0; nextBtn.disabled = n === slides.length - 1;
+  if (prev >= 0) leave(slides[prev]);
+  enter(slides[n]);
+  if (!fromHash) { ignoreHash = true; location.hash = 'slide-' + (n + 1); }
+}
+let ignoreHash = false;
+const fromLocation = () => { const m = location.hash.match(/^#slide-(\d+)$/); return m ? +m[1] - 1 : 0; };
+window.addEventListener('hashchange', () => { if (ignoreHash) { ignoreHash = false; return; } goTo(fromLocation(), true); });
+prevBtn.addEventListener('click', () => goTo(cur - 1));
+nextBtn.addEventListener('click', () => goTo(cur + 1));
+document.addEventListener('keydown', e => {
+  const tg = e.target;
+  if (tg.closest && tg.closest('.sheet, input, textarea, select')) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (['ArrowRight','PageDown'].includes(e.key) || (e.key === ' ' && !tg.closest('button, summary, a'))) { e.preventDefault(); goTo(cur + 1); }
+  else if (['ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); goTo(cur - 1); }
+  else if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+  else if (e.key === 'End') { e.preventDefault(); goTo(slides.length - 1); }
+});
+let tx = null, ty = null;
+const deck = document.getElementById('deck');
+deck.addEventListener('touchstart', e => { if (e.target.closest('.sheet, input, .refwrap, .table-wrap')) { tx = null; return; } tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive:true });
+deck.addEventListener('touchend', e => {
+  if (tx === null) return;
+  const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+  if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) goTo(cur + (dx < 0 ? 1 : -1));
+  tx = null;
+}, { passive:true });
+
+goTo(fromLocation(), true);
+})();
+</script>
+</body>
+</html>
