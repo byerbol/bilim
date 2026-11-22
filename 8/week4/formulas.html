@@ -140,13 +140,20 @@ table.grid{border-collapse:collapse; table-layout:fixed; font:400 .95rem var(--b
 .say b,.say code{color:var(--accent)}
 
 /* operators */
-.ops{width:100%; border-collapse:separate; border-spacing:0 6px}
-.ops button{width:100%; display:grid; grid-template-columns:3rem minmax(0,1fr) auto; align-items:center; gap:12px; text-align:left; padding:10px 14px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; font:400 1rem var(--body)}
-.ops button:hover{border-color:var(--accent)}
-.ops button[aria-pressed="true"]{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); background:var(--accent-soft)}
-.ops .sym{font:700 1.4rem var(--mono); color:var(--accent); text-align:center}
-.ops .ex{font:400 .88rem var(--mono); color:var(--muted)}
-.opslist{list-style:none; margin:0; padding:0; display:grid; gap:8px}
+.opslist{list-style:none; margin:0; padding:0; display:grid; gap:10px; max-width:560px}
+.op{width:100%; display:grid; grid-template-columns:48px minmax(0,1fr) auto; align-items:center; gap:14px; text-align:left;
+  padding:10px 16px 10px 10px; border-radius:14px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer;
+  font:400 1rem var(--body); transition:transform .18s cubic-bezier(.2,.7,.2,1), border-color .18s, box-shadow .18s, background .18s}
+.op:hover{transform:translateX(4px); border-color:var(--accent)}
+.op .sym{width:48px; height:48px; border-radius:11px; display:grid; place-items:center; background:var(--accent-soft); color:var(--accent); font:700 1.6rem/1 var(--mono); transition:background .18s, color .18s}
+.op .txt{display:flex; flex-direction:column; gap:2px; min-width:0}
+.op .name{font:700 1.08rem/1.2 var(--display)}
+.op .ex{font:400 .86rem var(--mono); color:var(--muted)}
+.op .res{font:700 1.05rem var(--mono); color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap}
+.op[aria-pressed="true"]{border-color:var(--accent); background:var(--accent-soft); box-shadow:0 14px 30px -22px var(--shadow)}
+.op[aria-pressed="true"] .sym{background:var(--accent); color:var(--accent-ink)}
+.op[aria-pressed="true"] .res{color:var(--accent)}
+@media (prefers-reduced-motion:reduce){ .op{transition:none} .op:hover{transform:none} }
 
 /* address readout */
 .readout{display:flex; align-items:baseline; gap:16px; flex-wrap:wrap}
@@ -1383,7 +1390,8 @@ const opsHost = document.querySelector('[data-demo="ops"]');
 const opsList = document.getElementById('ops');
 OPS.forEach((o, i) => {
   const li = document.createElement('li');
-  li.innerHTML = `<button type="button" aria-pressed="false"><span class="sym">${esc(o.s)}</span><span>${o.name}</span><span class="ex">${esc(o.f)}</span></button>`;
+  const res = fmt(new Model(2, 1, { A1:'12', A2:'4', B1:o.f }).val('B1'));
+  li.innerHTML = `<button class="op" type="button" aria-pressed="false"><span class="sym">${esc(o.s)}</span><span class="txt"><span class="name">${o.name}</span><span class="ex">${esc(o.f)}</span></span><span class="res">= ${res}</span></button>`;
   li.firstElementChild.addEventListener('click', () => playOp(i));
   opsList.appendChild(li);
 });
