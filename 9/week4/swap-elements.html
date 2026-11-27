@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Swap Elements in a List</title>
 <script>try{var t=localStorage.getItem('bilim-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<script>try{var ct=localStorage.getItem('bilim-code-theme');if(ct&&ct!=='forest')document.documentElement.setAttribute('data-code-theme',ct)}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600;700&display=swap">
@@ -259,6 +260,32 @@ table.sum{border-collapse:collapse; width:100%; min-width:460px}
   .slide,.slide.active{transition:none; transform:none}
   .slide.active .slide-inner > *, .slide.active .split > *{animation:none}
 }
+
+/* ---------- code color themes ---------- */
+:root{--code-line:rgba(255,255,255,.08); --code-line2:rgba(255,255,255,.2); --code-con:rgba(0,0,0,.25); --code-err:#ff9e8f; --code-sel:rgba(127,224,169,.28)}
+:root[data-code-theme="paper"]{--code-bg:#fbfcf8; --code-ink:#1f2a27; --code-kw:#c2410c; --code-fn:#0f7a4a; --code-str:#9a5800; --code-num:#2453c6; --code-com:#7d8f88;
+  --code-line:rgba(0,0,0,.09); --code-line2:rgba(0,0,0,.2); --code-con:rgba(0,0,0,.04); --code-err:#b42318; --code-sel:rgba(36,83,198,.2)}
+:root[data-code-theme="midnight"]{--code-bg:#0f1630; --code-ink:#e6e9f5; --code-kw:#c792ea; --code-fn:#82aaff; --code-str:#c3e88d; --code-num:#f78c6c; --code-com:#6e7aa8;
+  --code-line:rgba(255,255,255,.08); --code-line2:rgba(255,255,255,.2); --code-con:rgba(0,0,0,.3); --code-err:#ff8a9a; --code-sel:rgba(130,170,255,.3)}
+:root[data-code-theme="contrast"]{--code-bg:#000000; --code-ink:#ffffff; --code-kw:#ffd400; --code-fn:#5cf2ff; --code-str:#9cff6b; --code-num:#ff9cf0; --code-com:#a0a0a0;
+  --code-line:rgba(255,255,255,.3); --code-line2:rgba(255,255,255,.5); --code-con:#0d0d0d; --code-err:#ff6b6b; --code-sel:rgba(255,212,0,.35)}
+.code-head,.editor-head{border-bottom-color:var(--code-line) !important; color:var(--code-com) !important}
+.code-head .btn,.editor-head .btn{border-color:var(--code-line2) !important; color:var(--code-ink) !important}
+.code-head .btn.go{color:var(--code-bg) !important; border-color:var(--code-fn) !important}
+.console{border-top-color:var(--code-line) !important; background:var(--code-con) !important; color:var(--code-ink) !important}
+.console .err{color:var(--code-err) !important}
+.stdin{border-top-color:var(--code-line) !important; background:var(--code-con) !important; color:var(--code-ink) !important}
+.stdin-lbl{border-top-color:var(--code-line) !important}
+.code-theme{font:600 .74rem var(--mono); padding:4px 6px; border-radius:6px; border:1px solid var(--code-line2); background:var(--code-bg); color:var(--code-ink); cursor:pointer}
+.ed-wrap{position:relative; background:var(--code-bg)}
+.ed-wrap .ed-hl{position:absolute; inset:0; margin:0; overflow:hidden; pointer-events:none; white-space:pre; color:var(--code-ink); background:transparent; border:0}
+.ed-wrap .ed-hl .k{color:var(--code-kw); font-weight:600}
+.ed-wrap .ed-hl .f{color:var(--code-fn)}
+.ed-wrap .ed-hl .s{color:var(--code-str)}
+.ed-wrap .ed-hl .n{color:var(--code-num)}
+.ed-wrap .ed-hl .c{color:var(--code-com); font-style:italic}
+.ed-wrap .editor{position:relative; z-index:1; background:transparent !important; color:transparent !important; -webkit-text-fill-color:transparent; caret-color:var(--code-ink) !important}
+.ed-wrap .editor::selection{background:var(--code-sel)}
 </style>
 </head>
 <body>
@@ -1323,7 +1350,7 @@ TASKS.forEach((t, n) => {
         <div class="feedback" role="status" aria-live="polite"></div>
       </div>
       <div class="codebox">
-        <div class="code-head"><label for="ed-${t.id}">main.py</label><span class="row"><span class="py-status"></span><button class="btn small go run" type="button">${RUN_SVG}Run</button></span></div>
+        <div class="code-head"><label for="ed-${t.id}">main.py</label><span class="row"><select class="code-theme" aria-label="Editor color theme"><option value="forest">Forest</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="contrast">High contrast</option></select><span class="py-status"></span><button class="btn small go run" type="button">${RUN_SVG}Run</button></span></div>
         <textarea class="editor" id="ed-${t.id}" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
         <div class="stdin-lbl"><label for="in-${t.id}">Input · one value per line</label></div>
         <textarea class="stdin" id="in-${t.id}" spellcheck="false" placeholder="${t.stdin ? '' : 'This task does not need input.'}"></textarea>
@@ -1374,6 +1401,36 @@ TASKS.forEach((t, n) => {
   li.querySelector('button').addEventListener('click', () => goTo(slides.indexOf(sec)));
   taskList.appendChild(li);
 });
+
+
+/* ---------- colored editor + code themes ---------- */
+(function(){
+  const desc = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+  document.querySelectorAll('textarea.editor').forEach(ta => {
+    const wrap = document.createElement('div'); wrap.className = 'ed-wrap';
+    ta.parentNode.insertBefore(wrap, ta);
+    const pre = document.createElement('pre'); pre.className = 'ed-hl'; pre.setAttribute('aria-hidden', 'true');
+    wrap.append(pre, ta);
+    const cs = getComputedStyle(ta);
+    ['fontFamily','fontSize','fontWeight','lineHeight','letterSpacing','paddingTop','paddingRight','paddingBottom','paddingLeft','tabSize'].forEach(p => { pre.style[p] = cs[p]; });
+    const sync = () => { pre.scrollTop = ta.scrollTop; pre.scrollLeft = ta.scrollLeft; };
+    const paint = () => { pre.innerHTML = highlight(desc.get.call(ta)) + '\n '; sync(); };
+    ta.addEventListener('input', paint);
+    ta.addEventListener('scroll', sync);
+    Object.defineProperty(ta, 'value', { configurable:true, get(){ return desc.get.call(this); }, set(v){ desc.set.call(this, v); paint(); } });
+    paint();
+  });
+  const KEY = 'bilim-code-theme';
+  function apply(t){
+    t = t || 'forest';
+    if (t === 'forest') document.documentElement.removeAttribute('data-code-theme'); else document.documentElement.setAttribute('data-code-theme', t);
+    try { localStorage.setItem(KEY, t); } catch (e) {}
+    document.querySelectorAll('.code-theme').forEach(s => { s.value = t; });
+  }
+  document.querySelectorAll('.code-theme').forEach(s => s.addEventListener('change', () => apply(s.value)));
+  let t = 'forest'; try { t = localStorage.getItem(KEY) || 'forest'; } catch (e) {}
+  apply(t);
+})();
 
 /* ---------- quiz ---------- */
 document.querySelectorAll('.q').forEach(q => {
